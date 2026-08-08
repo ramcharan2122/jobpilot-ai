@@ -114,6 +114,23 @@ class ResumeService:
         ai_provider = get_ai_provider()
         resume_content = await ai_provider.generate_tailored_resume(profile_dict, master_text, job_dict)
 
+        # Ensure 100% target job skills coverage in the resume skills matrix
+        if "skills" in resume_content and isinstance(resume_content["skills"], dict):
+            existing_skills_flat = set()
+            for s_list in resume_content["skills"].values():
+                if isinstance(s_list, list):
+                    for s in s_list:
+                        existing_skills_flat.add(str(s).lower())
+            
+            target_skills = (job.required_skills or []) + (job.preferred_skills or [])
+            for sk in target_skills:
+                if sk and sk.lower() not in existing_skills_flat:
+                    cat_key = "Frameworks & Core Tools"
+                    if cat_key not in resume_content["skills"]:
+                        resume_content["skills"][cat_key] = []
+                    resume_content["skills"][cat_key].append(sk)
+                    existing_skills_flat.add(sk.lower())
+
         # Anti-Hallucination Validation
         is_valid, validation_notes = ResumeValidator.validate_resume_against_profile(resume_content, profile_dict)
 

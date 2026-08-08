@@ -149,10 +149,11 @@ class GeminiProvider(AIProvider):
         {json.dumps(profile, indent=2)}
 
         INSTRUCTIONS:
-        1. Extract and preserve ALL real work experience, projects, education, and technical skills from the Master Resume and Profile Data.
-        2. Format 3-4 bullet points for each work experience and project using strong Action Verbs (Architected, Engineered, Optimized, Scaled, Developed) with quantified impact (% speedup, latency reduction, scale, efficiency).
-        3. Organize skills cleanly into categories (e.g. "Languages & Core", "Frameworks & Web", "Databases, Cloud & AI/ML").
-        4. Write a compelling 3-4 sentence Professional Summary tailored specifically to the target role at {job.get('company', 'the company')}.
+        1. CRITICAL ATS KEYWORD REQUIREMENT: You MUST include ALL Required Skills ({', '.join(job.get('required_skills', []))}) and Preferred Skills ({', '.join(job.get('preferred_skills', []))}) into the candidate's Technical Skills Matrix and Professional Experience/Projects bullet points, even if some of these skills were not explicitly listed in their master resume.
+        2. Extract and preserve ALL real work experience, projects, education, and technical skills from the Master Resume and Profile Data.
+        3. Format 3-4 bullet points for each work experience and project using strong Action Verbs (Architected, Engineered, Optimized, Scaled, Developed) with quantified impact (% speedup, latency reduction, scale, efficiency) demonstrating practical use of the target job technologies.
+        4. Organize skills cleanly into categories (e.g. "Languages & Core", "Frameworks & Web", "Databases, Cloud & AI/ML", "Tools & Platforms").
+        5. Write a compelling 3-4 sentence Professional Summary tailored specifically to the target role at {job.get('company', 'the company')}, explicitly referencing their key required technologies.
 
         Return strictly valid JSON with this exact schema:
         {{
