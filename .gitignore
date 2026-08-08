@@ -1,0 +1,27 @@
+# Environments & Dependencies
+venv/
+backend/venv/
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+
+# SQLite Database & Storage
+*.db
+jobpilot.db
+backend/jobpilot.db
+storage/
+backend/storage/
+
+# Environment Secret Files
+.env
+backend/.env
+frontend/.env
+*.local
+
+# IDE & OS Files
+.DS_Store
+.vscode/
+.idea/
+__pycache__/
+*.pyc
