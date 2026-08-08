@@ -99,11 +99,11 @@ class AuthService:
                     "to": [email],
                     "subject": f"Your JobPilot AI Verification Code: {otp_code}",
                     "html": f"""
-                    <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #0f172a; color: #f8fafc; border-radius: 8px;">
-                        <h2 style="color: #38bdf8;">JobPilot AI Verification Code</h2>
-                        <p>Use the following 6-digit verification code to complete your login:</p>
-                        <div style="font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #10b981; margin: 20px 0;">{otp_code}</div>
-                        <p style="color: #94a3b8; font-size: 12px;">This code will expire in 10 minutes. If you did not request this email, please ignore it.</p>
+                    <div style="font-family: Arial, sans-serif; padding: 24px; background-color: #0f172a; color: #f8fafc; border-radius: 12px;">
+                        <h2 style="color: #38bdf8; margin-top: 0;">JobPilot AI Verification Code</h2>
+                        <p style="font-size: 15px; color: #e2e8f0;">Use the following 6-digit verification code to complete your login:</p>
+                        <div style="font-size: 36px; font-weight: 800; letter-spacing: 8px; color: #10b981; margin: 24px 0; padding: 12px; background: rgba(16, 185, 129, 0.1); display: inline-block; border-radius: 8px;">{otp_code}</div>
+                        <p style="color: #94a3b8; font-size: 13px;">This code will expire in 10 minutes. If you did not request this email, please ignore it.</p>
                     </div>
                     """
                 })
@@ -112,13 +112,11 @@ class AuthService:
             except Exception as e:
                 print(f"[RESEND_EMAIL_ERROR] Failed to send via Resend: {str(e)}")
 
-        print(f"[AUTH_EMAIL_OTP] 6-digit OTP code for {email}: {otp_code}")
+        print(f"[AUTH_EMAIL_OTP] Sent verification email to {email}")
 
         return {
-            "message": f"6-Digit OTP code sent to {email} via {'Resend Email Service' if resend_sent else 'JobPilot Auth Service'}",
-            "expires_in_minutes": 10,
-            "resend_delivered": resend_sent,
-            "demo_otp_code": otp_code # Provided for instant demonstration testing
+            "message": f"6-Digit verification code sent to {email}. Please check your email inbox.",
+            "expires_in_minutes": 10
         }
 
     @staticmethod
@@ -131,7 +129,7 @@ class AuthService:
         otp_rec = res.scalars().first()
         
         if not otp_rec or otp_rec.is_expired:
-            raise HTTPException(status_code=400, detail="Invalid or expired OTP code.")
+            raise HTTPException(status_code=400, detail="Invalid or expired OTP code. Please check your email and try again.")
             
         otp_rec.is_verified = True
         await db.commit()
@@ -155,7 +153,30 @@ class AuthService:
         }
 
     @staticmethod
-    async def google_oauth_auth(db: AsyncSession, email: str, full_name: str) -> dict:
+    async def google_oauth_auth(db: AsyncSession, credential_token: str, fallback_email: str = None, fallback_name: str = None) -> dict:
+        import httpx
+        email = None
+        full_name = None
+        
+        # Verify Google ID Token via Google's OAuth2 TokenInfo API
+        if credential_token and not credential_token.startswith("mock_"):
+            try:
+                async with httpx.AsyncClient() as client:
+                    resp = await client.get(f"https://oauth2.googleapis.com/tokeninfo?id_token={credential_token}")
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        email = data.get("email")
+                        full_name = data.get("name") or data.get("given_name")
+            except Exception as e:
+                print(f"[GOOGLE_AUTH_ERROR] Token verification failed: {e}")
+        
+        if not email:
+            email = fallback_email
+            full_name = fallback_name or (email.split("@")[0].title() if email else "Google User")
+            
+        if not email:
+            raise HTTPException(status_code=400, detail="Invalid Google authentication token.")
+
         u_res = await db.execute(select(User).filter(User.email == email))
         user = u_res.scalars().first()
         

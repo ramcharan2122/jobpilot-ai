@@ -46,19 +46,6 @@ async def startup_event():
     try:
         async with AsyncSessionLocal() as session:
             await JobService.seed_demo_jobs(session)
-            
-            # Pre-seed demo candidate account
-            from app.schemas.schemas import UserCreate
-            from app.services.auth_service import AuthService
-            try:
-                demo_user = UserCreate(
-                    email="candidate@example.com",
-                    password="password123",
-                    full_name="Shashi Kiran"
-                )
-                await AuthService.register_user(session, demo_user)
-            except Exception:
-                pass # User already exists
     except Exception as e:
         print(f"⚠️ Startup seeding warning: {e}")
 

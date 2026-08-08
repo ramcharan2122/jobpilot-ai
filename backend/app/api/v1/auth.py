@@ -17,9 +17,9 @@ class VerifyOTPRequest(BaseModel):
     otp_code: str
 
 class GoogleOAuthRequest(BaseModel):
-    email: EmailStr
-    full_name: str
     credential_token: str
+    email: EmailStr | None = None
+    full_name: str | None = None
 
 @router.post("/register", response_model=Token)
 async def register(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
@@ -39,7 +39,7 @@ async def verify_otp(req: VerifyOTPRequest, db: AsyncSession = Depends(get_db)):
 
 @router.post("/google", response_model=Token)
 async def google_auth(req: GoogleOAuthRequest, db: AsyncSession = Depends(get_db)):
-    return await AuthService.google_oauth_auth(db, req.email, req.full_name)
+    return await AuthService.google_oauth_auth(db, req.credential_token, req.email, req.full_name)
 
 @router.get("/me", response_model=UserOut)
 async def get_me(current_user: User = Depends(get_current_user)):

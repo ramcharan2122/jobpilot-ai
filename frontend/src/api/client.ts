@@ -72,11 +72,15 @@ export const api = {
     return res.json();
   },
 
-  async googleAuth(email: string, full_name: string, credential_token: string) {
+  async googleAuth(credentialToken: string, email?: string, fullName?: string) {
     const res = await fetch(`${API_BASE}/auth/google`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, full_name, credential_token })
+      body: JSON.stringify({
+        credential_token: credentialToken,
+        email: email || undefined,
+        full_name: fullName || undefined
+      })
     });
     if (!res.ok) {
       const err = await res.json();

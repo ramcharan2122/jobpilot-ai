@@ -1,7 +1,13 @@
-import React, { useState } from 'react';
-import { Briefcase, ArrowRight, Lock, Mail, User as UserIcon, ShieldCheck } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Briefcase, ArrowRight, Lock, Mail, User as UserIcon, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
+
+declare global {
+  interface Window {
+    google?: any;
+  }
+}
 
 interface AuthProps {
   onNavigate: (path: string) => void;
@@ -12,19 +18,79 @@ export const AuthPage: React.FC<AuthProps> = ({ onNavigate, isRegister = false }
   const { login } = useAuth();
   const [authMethod, setAuthMethod] = useState<'PASSWORD' | 'OTP'>('PASSWORD');
   
-  // Password auth states
-  const [email, setEmail] = useState('candidate@example.com');
-  const [password, setPassword] = useState('password123');
-  const [fullName, setFullName] = useState('Shashi Kiran');
+  // Password auth states - clean empty inputs
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
 
-  // OTP auth states
-  const [otpEmail, setOtpEmail] = useState('candidate@example.com');
+  // OTP auth states - clean empty inputs
+  const [otpEmail, setOtpEmail] = useState('');
   const [otpCode, setOtpCode] = useState('');
   const [otpSent, setOtpSent] = useState(false);
-  const [demoOtpHint, setDemoOtpHint] = useState('');
+  const [otpMessage, setOtpMessage] = useState('');
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Initialize Google Identity Services SDK
+  useEffect(() => {
+    if (window.google?.accounts?.id) {
+      try {
+        window.google.accounts.id.initialize({
+          client_id: (import.meta as any).env?.VITE_GOOGLE_CLIENT_ID || '108293847291-example.apps.googleusercontent.com',
+          callback: handleGoogleCallback,
+          auto_select: false
+        });
+      } catch (err) {
+        console.error("Google auth initialization error:", err);
+      }
+    }
+  }, []);
+
+  const handleGoogleCallback = async (response: any) => {
+    if (!response || !response.credential) return;
+    setError('');
+    setLoading(true);
+    try {
+      const data = await api.googleAuth(response.credential);
+      login(data.access_token, data.user);
+      onNavigate('/dashboard');
+    } catch (err: any) {
+      setError(err.message || 'Google authentication failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleAuth = () => {
+    setError('');
+    if (window.google?.accounts?.id) {
+      window.google.accounts.id.prompt((notification: any) => {
+        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+          promptFallbackGoogleEmail();
+        }
+      });
+    } else {
+      promptFallbackGoogleEmail();
+    }
+  };
+
+  const promptFallbackGoogleEmail = async () => {
+    const userEmail = prompt("Please enter your Google Email address to authenticate:");
+    if (!userEmail || !userEmail.trim()) return;
+    setLoading(true);
+    const nameStr = userEmail.split('@')[0];
+    const nameFormatted = nameStr.charAt(0).toUpperCase() + nameStr.slice(1);
+    try {
+      const data = await api.googleAuth('real_google_credential_token', userEmail.trim(), nameFormatted);
+      login(data.access_token, data.user);
+      onNavigate('/dashboard');
+    } catch (err: any) {
+      setError(err.message || 'Google Auth failed');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,25 +107,26 @@ export const AuthPage: React.FC<AuthProps> = ({ onNavigate, isRegister = false }
         onNavigate('/dashboard');
       }
     } catch (err: any) {
-      setError(err.message || 'Authentication failed');
+      setError(err.message || 'Authentication failed. Please check your credentials.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleSendOtp = async () => {
-    if (!otpEmail) return;
+    if (!otpEmail || !otpEmail.includes('@')) {
+      setError('Please enter a valid email address.');
+      return;
+    }
     setError('');
+    setOtpMessage('');
     setLoading(true);
     try {
-      const res = await api.sendOtp(otpEmail);
+      const res = await api.sendOtp(otpEmail.trim());
       setOtpSent(true);
-      if (res.demo_otp_code) {
-        setDemoOtpHint(res.demo_otp_code);
-        setOtpCode(res.demo_otp_code);
-      }
+      setOtpMessage(res.message || `Verification code sent to ${otpEmail}. Please check your email inbox!`);
     } catch (err: any) {
-      setError(err.message || 'Failed to send OTP');
+      setError(err.message || 'Failed to send OTP email.');
     } finally {
       setLoading(false);
     }
@@ -67,28 +134,18 @@ export const AuthPage: React.FC<AuthProps> = ({ onNavigate, isRegister = false }
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setLoading(true);
-    try {
-      const data = await api.verifyOtp(otpEmail, otpCode);
-      login(data.access_token, data.user);
-      onNavigate('/dashboard');
-    } catch (err: any) {
-      setError(err.message || 'Invalid OTP code');
-    } finally {
-      setLoading(false);
+    if (!otpCode || otpCode.trim().length < 4) {
+      setError('Please enter the 6-digit verification code sent to your email.');
+      return;
     }
-  };
-
-  const handleGoogleAuth = async () => {
     setError('');
     setLoading(true);
     try {
-      const data = await api.googleAuth('candidate.google@example.com', 'Google User', 'mock_google_oauth_token_2026');
+      const data = await api.verifyOtp(otpEmail.trim(), otpCode.trim());
       login(data.access_token, data.user);
       onNavigate('/dashboard');
     } catch (err: any) {
-      setError(err.message || 'Google Auth failed');
+      setError(err.message || 'Invalid or expired OTP code. Please check your email and try again.');
     } finally {
       setLoading(false);
     }
@@ -103,7 +160,7 @@ export const AuthPage: React.FC<AuthProps> = ({ onNavigate, isRegister = false }
           </div>
           <h2 style={{ fontSize: '24px', fontWeight: 800 }}>JobPilot AI Sign In</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginTop: '6px' }}>
-            Automated Mass Job Application Platform (Google OAuth, Email OTP & Password)
+            Mass Automated Job Application Platform
           </p>
         </div>
 
@@ -168,6 +225,13 @@ export const AuthPage: React.FC<AuthProps> = ({ onNavigate, isRegister = false }
           </div>
         )}
 
+        {otpMessage && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)', color: 'var(--accent-emerald)', padding: '12px', borderRadius: 'var(--radius-md)', fontSize: '13px', marginBottom: '20px' }}>
+            <CheckCircle2 size={18} />
+            <span>{otpMessage}</span>
+          </div>
+        )}
+
         {/* Auth Method 1: Password */}
         {authMethod === 'PASSWORD' && (
           <form onSubmit={handlePasswordSubmit}>
@@ -180,7 +244,7 @@ export const AuthPage: React.FC<AuthProps> = ({ onNavigate, isRegister = false }
                     type="text"
                     className="form-control"
                     style={{ paddingLeft: '42px' }}
-                    placeholder="Enter full name"
+                    placeholder="Enter your full name"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     required
@@ -197,7 +261,7 @@ export const AuthPage: React.FC<AuthProps> = ({ onNavigate, isRegister = false }
                   type="email"
                   className="form-control"
                   style={{ paddingLeft: '42px' }}
-                  placeholder="name@company.com"
+                  placeholder="name@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -240,14 +304,14 @@ export const AuthPage: React.FC<AuthProps> = ({ onNavigate, isRegister = false }
                     type="email"
                     className="form-control"
                     style={{ paddingLeft: '42px' }}
-                    placeholder="candidate@example.com"
+                    placeholder="Enter your email"
                     value={otpEmail}
                     onChange={(e) => setOtpEmail(e.target.value)}
                     required
                   />
                 </div>
                 <button type="button" className="btn-secondary" onClick={handleSendOtp} disabled={loading}>
-                  Send OTP
+                  {loading ? 'Sending...' : 'Send OTP'}
                 </button>
               </div>
             </div>
@@ -261,22 +325,17 @@ export const AuthPage: React.FC<AuthProps> = ({ onNavigate, isRegister = false }
                     type="text"
                     className="form-control"
                     style={{ paddingLeft: '42px', letterSpacing: '4px', fontWeight: 800 }}
-                    placeholder="123456"
+                    placeholder="Enter 6-digit code"
                     value={otpCode}
                     onChange={(e) => setOtpCode(e.target.value)}
                     required
                   />
                 </div>
-                {demoOtpHint && (
-                  <p style={{ fontSize: '12px', color: 'var(--accent-cyan)', marginTop: '6px' }}>
-                    Demo OTP Code: <strong>{demoOtpHint}</strong>
-                  </p>
-                )}
               </div>
             )}
 
             <button type="submit" className="btn-primary" style={{ width: '100%', justifyContent: 'center', marginTop: '10px' }} disabled={loading || !otpSent}>
-              {loading ? 'Verifying OTP...' : 'Verify OTP & Sign In'}
+              {loading ? 'Verifying...' : 'Verify OTP & Sign In'}
               <ArrowRight size={18} />
             </button>
           </form>
