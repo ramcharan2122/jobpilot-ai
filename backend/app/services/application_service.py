@@ -66,74 +66,82 @@ class ApplicationService:
         if not app:
             raise HTTPException(status_code=404, detail="Application not found.")
 
-        # 1. State transition: GENERATING_RESUME
-        app.status = "GENERATING_RESUME"
-        db.add(ApplicationEvent(application_id=app.id, event_type="LOG", message="Generating tailored job-specific resume..."))
-        await db.commit()
+        try:
+            # 1. State transition: GENERATING_RESUME
+            app.status = "GENERATING_RESUME"
+            db.add(ApplicationEvent(application_id=app.id, event_type="LOG", message="Generating tailored job-specific resume..."))
+            await db.commit()
 
-        # 2. Generate Custom Resume
-        gen_resume = await ResumeService.generate_job_resume(db, app.user_id, app.job_id)
-        app.resume_id = gen_resume.id
-        app.status = "RESUME_READY"
-        db.add(ApplicationEvent(application_id=app.id, event_type="LOG", message="Resume generated & verified. File ready."))
-        await db.commit()
+            # 2. Generate Custom Resume
+            gen_resume = await ResumeService.generate_job_resume(db, app.user_id, app.job_id)
+            app.resume_id = gen_resume.id
+            app.status = "RESUME_READY"
+            db.add(ApplicationEvent(application_id=app.id, event_type="LOG", message="Resume generated & verified. File ready."))
+            await db.commit()
 
-        # 3. Generate Custom Application Question Answers & Cover Letter
-        p_res = await db.execute(select(Profile).filter(Profile.user_id == app.user_id))
-        profile = p_res.scalars().first()
-        profile_dict = {
-            "first_name": profile.first_name if profile else "Applicant",
-            "last_name": profile.last_name if profile else "",
-            "email": profile.email if profile else "",
-            "phone": profile.phone if profile else "",
-            "skills": [s.name for s in (profile.skills if profile else [])],
-            "experiences": [{"company": e.company, "job_title": e.job_title} for e in (profile.experiences if profile else [])]
-        }
-        job_dict = {
-            "title": app.job.title,
-            "company": app.job.company
-        }
+            # 3. Generate Custom Application Question Answers & Cover Letter
+            p_res = await db.execute(select(Profile).filter(Profile.user_id == app.user_id))
+            profile = p_res.scalars().first()
+            profile_dict = {
+                "first_name": profile.first_name if profile else "Applicant",
+                "last_name": profile.last_name if profile else "",
+                "email": profile.email if profile else "",
+                "phone": profile.phone if profile else "",
+                "skills": [s.name for s in (profile.skills if profile else [])],
+                "experiences": [{"company": e.company, "job_title": e.job_title} for e in (profile.experiences if profile else [])]
+            }
+            job_dict = {
+                "title": app.job.title if app.job else "Software Engineer",
+                "company": app.job.company if app.job else "Tech Company"
+            }
 
-        ai_provider = get_ai_provider()
-        sample_questions = [
-            f"Why do you want to work as a {app.job.title} at {app.job.company}?",
-            "What is your expected salary and notice period?"
-        ]
-        answers = await ai_provider.generate_answers(profile_dict, job_dict, sample_questions)
-        cover_letter = await ai_provider.generate_cover_letter(profile_dict, job_dict)
+            ai_provider = get_ai_provider()
+            sample_questions = [
+                f"Why do you want to work as a {job_dict['title']} at {job_dict['company']}?",
+                "What is your expected salary and notice period?"
+            ]
+            answers = await ai_provider.generate_answers(profile_dict, job_dict, sample_questions)
+            cover_letter = await ai_provider.generate_cover_letter(profile_dict, job_dict)
 
-        app.answers_json = answers
-        app.cover_letter = cover_letter
-        await db.commit()
+            app.answers_json = answers
+            app.cover_letter = cover_letter
+            await db.commit()
 
-        # If Mode is APPROVAL, stop here and await user approval before submitting!
-        if app.application_mode == "APPROVAL":
-            db.add(ApplicationEvent(application_id=app.id, event_type="LOG", message="Application ready for user review/approval."))
+            # If Mode is APPROVAL, stop here and await user approval before submitting!
+            if app.application_mode == "APPROVAL":
+                db.add(ApplicationEvent(application_id=app.id, event_type="LOG", message="Application ready for user review/approval."))
+                await db.commit()
+                return app
+
+            # 4. If Mode is AUTO or user triggered Submit: Proceed to APPLYING via Playwright
+            app.status = "APPLYING"
+            db.add(ApplicationEvent(application_id=app.id, event_type="LOG", message="Launching browser automation engine..."))
+            await db.commit()
+
+            adapter = LocalMockApplicationAdapter()
+            auto_res = await adapter.apply_to_job(
+                application_id=app.id,
+                application_url=app.job.application_url if app.job else "",
+                user_profile=profile_dict,
+                resume_path=gen_resume.pdf_path,
+                answers=answers
+            )
+
+            app.status = auto_res.get("status", "SUBMITTED")
+            app.error_type = auto_res.get("error_type")
+            app.error_message = auto_res.get("error_message")
+            app.screenshot_path = auto_res.get("screenshot_path")
+            if app.status == "SUBMITTED":
+                app.submitted_at = datetime.utcnow()
+
+            db.add(ApplicationEvent(application_id=app.id, event_type="STATUS_CHANGE", message=f"Application status changed to {app.status}"))
             await db.commit()
             return app
 
-        # 4. If Mode is AUTO or user triggered Submit: Proceed to APPLYING via Playwright
-        app.status = "APPLYING"
-        db.add(ApplicationEvent(application_id=app.id, event_type="LOG", message="Launching browser automation engine..."))
-        await db.commit()
-
-        adapter = LocalMockApplicationAdapter()
-        auto_res = await adapter.apply_to_job(
-            application_id=app.id,
-            application_url=app.job.application_url,
-            user_profile=profile_dict,
-            resume_path=gen_resume.pdf_path,
-            answers=answers
-        )
-
-        app.status = auto_res.get("status", "SUBMITTED")
-        app.error_type = auto_res.get("error_type")
-        app.error_message = auto_res.get("error_message")
-        app.screenshot_path = auto_res.get("screenshot_path")
-        if app.status == "SUBMITTED":
-            app.submitted_at = datetime.utcnow()
-
-        db.add(ApplicationEvent(application_id=app.id, event_type="STATUS_CHANGE", message=f"Application status changed to {app.status}"))
-        await db.commit()
-
-        return app
+        except Exception as e:
+            print(f"⚠️ Application processing error: {e}")
+            app.status = "ACTION_REQUIRED"
+            app.error_message = str(e)
+            db.add(ApplicationEvent(application_id=app.id, event_type="ERROR", message=f"Processing failed: {str(e)}"))
+            await db.commit()
+            return app

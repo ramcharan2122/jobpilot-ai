@@ -41,6 +41,11 @@ async def list_applications(current_user: User = Depends(get_current_user), db: 
     apps = res.scalars().all()
     out = []
     for a in apps:
+        if a.status == "GENERATING_RESUME" or not a.resume_id:
+            try:
+                a = await ApplicationService.process_application(db, a.id)
+            except Exception:
+                pass
         out.append({
             "id": a.id,
             "job_id": a.job_id,

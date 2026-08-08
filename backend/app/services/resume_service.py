@@ -32,7 +32,20 @@ class ResumeService:
         p_res = await db.execute(select(Profile).filter(Profile.user_id == user_id))
         profile = p_res.scalars().first()
         if not profile:
-            raise HTTPException(status_code=404, detail="User profile not found.")
+            from app.models.user import User
+            u_res = await db.execute(select(User).filter(User.id == user_id))
+            user = u_res.scalars().first()
+            full_name = user.full_name if user else "Applicant"
+            name_parts = full_name.split(" ")
+            profile = Profile(
+                user_id=user_id,
+                first_name=name_parts[0] if len(name_parts) > 0 else "Applicant",
+                last_name=" ".join(name_parts[1:]) if len(name_parts) > 1 else "",
+                email=user.email if user else ""
+            )
+            db.add(profile)
+            await db.commit()
+            await db.refresh(profile)
 
         # Master resume text if available
         mr_res = await db.execute(select(MasterResume).filter(MasterResume.profile_id == profile.id))

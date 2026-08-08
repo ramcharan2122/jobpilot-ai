@@ -1,6 +1,13 @@
 import type { Profile, UserSettings, Job, Application, Campaign, DashboardStats } from '../types';
 
-const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+export const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+
+export const getDownloadUrl = (path: string): string => {
+  if (!path) return '#';
+  if (path.startsWith('http')) return path;
+  const baseUrl = API_BASE.replace('/api/v1', '');
+  return `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}`;
+};
 
 export const getAuthToken = (): string | null => {
   return localStorage.getItem('jobpilot_token');
