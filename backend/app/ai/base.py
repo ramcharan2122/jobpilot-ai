@@ -24,6 +24,6 @@ class AIProvider(ABC):
         pass
 
     @abstractmethod
-    async def generate_cover_letter(self, profile: Dict[str, Any], job: Dict[str, Any]) -> str:
-        """Generate a concise professional cover letter."""
+    async def parse_resume_text(self, raw_resume_text: str) -> Dict[str, Any]:
+        """Extract structured candidate profile details (skills, experience, projects, education) from raw resume text."""
         pass

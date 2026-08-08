@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Download, ShieldCheck, Eye, X } from 'lucide-react';
-import { api } from '../api/client';
+import { api, getDownloadUrl } from '../api/client';
 import type { GeneratedResume } from '../types';
 
 export const ResumesPage: React.FC = () => {
@@ -48,10 +48,10 @@ export const ResumesPage: React.FC = () => {
               <button className="btn-secondary" style={{ flex: 1, padding: '8px', fontSize: '13px', justifyContent: 'center' }} onClick={() => setSelectedResume(res)}>
                 <Eye size={14} /> Preview
               </button>
-              <a href={`http://localhost:8000${res.pdf_url}`} target="_blank" rel="noreferrer" className="btn-primary" style={{ padding: '8px 12px', fontSize: '13px' }}>
+              <a href={getDownloadUrl(res.pdf_url)} target="_blank" rel="noreferrer" className="btn-primary" style={{ padding: '8px 12px', fontSize: '13px' }}>
                 <Download size={14} /> PDF
               </a>
-              <a href={`http://localhost:8000${res.docx_url}`} target="_blank" rel="noreferrer" className="btn-secondary" style={{ padding: '8px 12px', fontSize: '13px' }}>
+              <a href={getDownloadUrl(res.docx_url)} target="_blank" rel="noreferrer" className="btn-secondary" style={{ padding: '8px 12px', fontSize: '13px' }}>
                 <Download size={14} /> DOCX
               </a>
             </div>

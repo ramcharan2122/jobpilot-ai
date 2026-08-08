@@ -48,9 +48,178 @@ class GeminiProvider(AIProvider):
         from app.ai.smart_mock import SmartMockAIProvider
         return await SmartMockAIProvider().match_candidate(profile, job)
 
+    async def parse_resume_text(self, raw_resume_text: str) -> Dict[str, Any]:
+        if not self.client or not raw_resume_text.strip():
+            from app.ai.smart_mock import SmartMockAIProvider
+            return await SmartMockAIProvider().parse_resume_text(raw_resume_text)
+
+        prompt = f"""
+        Act as an Expert ATS Resume Parser. Extract all structured information from the following raw resume text.
+
+        RAW RESUME TEXT:
+        \"\"\"
+        {raw_resume_text[:6000]}
+        \"\"\"
+
+        Return strictly valid JSON with this exact schema:
+        {{
+            "first_name": "First Name",
+            "last_name": "Last Name",
+            "email": "Email Address",
+            "phone": "Phone Number",
+            "current_city": "City",
+            "country": "Country",
+            "linkedin_url": "LinkedIn URL",
+            "github_url": "GitHub URL",
+            "portfolio_url": "Portfolio URL",
+            "summary": "Professional Summary",
+            "skills": [
+                {{"name": "Skill Name", "category": "Programming/Frameworks/Databases/AI-ML/Cloud/Tools"}}
+            ],
+            "experiences": [
+                {{
+                    "company": "Company Name",
+                    "job_title": "Title",
+                    "location": "Location",
+                    "start_date": "Start Date",
+                    "end_date": "End Date",
+                    "is_current": false,
+                    "technologies": "Comma separated technologies",
+                    "description": "Key achievements and responsibilities"
+                }}
+            ],
+            "projects": [
+                {{
+                    "name": "Project Name",
+                    "description": "Description and achievements",
+                    "technologies": "Comma separated technologies"
+                }}
+            ],
+            "education": [
+                {{
+                    "degree": "Degree",
+                    "specialization": "Specialization",
+                    "university": "University/College Name",
+                    "location": "Location",
+                    "start_date": "Start Date",
+                    "end_date": "End Date",
+                    "gpa": "GPA/Percentage"
+                }}
+            ]
+        }}
+        Do not include markdown tags outside JSON. Return raw valid JSON.
+        """
+        try:
+            response = self.client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=prompt,
+            )
+            clean_text = response.text.replace("```json", "").replace("```", "").strip()
+            return json.loads(clean_text)
+        except Exception as e:
+            print(f"[GEMINI_PARSE_ERROR] {e}")
+            from app.ai.smart_mock import SmartMockAIProvider
+            return await SmartMockAIProvider().parse_resume_text(raw_resume_text)
+
     async def generate_tailored_resume(self, profile: Dict[str, Any], master_resume_text: str, job: Dict[str, Any]) -> Dict[str, Any]:
-        from app.ai.smart_mock import SmartMockAIProvider
-        return await SmartMockAIProvider().generate_tailored_resume(profile, master_resume_text, job)
+        if not self.client:
+            from app.ai.smart_mock import SmartMockAIProvider
+            return await SmartMockAIProvider().generate_tailored_resume(profile, master_resume_text, job)
+
+        first_name = profile.get("first_name", "")
+        last_name = profile.get("last_name", "")
+        cand_name = f"{first_name} {last_name}".strip() or "Candidate"
+
+        prompt = f"""
+        Act as a Senior Executive Tech Resume Writer and Staff Recruiter.
+        Your goal is to transform the candidate's master resume into a top-tier, highly professional, ATS-optimized resume tailored specifically for the target job description.
+
+        TARGET JOB DETAILS:
+        - Job Title: {job.get('title', 'Software Engineer')}
+        - Company: {job.get('company', 'Tech Company')}
+        - Required Skills: {', '.join(job.get('required_skills', []))}
+        - Preferred Skills: {', '.join(job.get('preferred_skills', []))}
+
+        CANDIDATE MASTER RESUME TEXT:
+        \"\"\"
+        {master_resume_text if master_resume_text else "No raw text provided."}
+        \"\"\"
+
+        CANDIDATE PROFILE STRUCTURED DATA:
+        {json.dumps(profile, indent=2)}
+
+        INSTRUCTIONS:
+        1. Extract and preserve ALL real work experience, projects, education, and technical skills from the Master Resume and Profile Data.
+        2. Format 3-4 bullet points for each work experience and project using strong Action Verbs (Architected, Engineered, Optimized, Scaled, Developed) with quantified impact (% speedup, latency reduction, scale, efficiency).
+        3. Organize skills cleanly into categories (e.g. "Languages & Core", "Frameworks & Web", "Databases, Cloud & AI/ML").
+        4. Write a compelling 3-4 sentence Professional Summary tailored specifically to the target role at {job.get('company', 'the company')}.
+
+        Return strictly valid JSON with this exact schema:
+        {{
+            "personal_info": {{
+                "name": "{cand_name}",
+                "email": "{profile.get('email', '')}",
+                "phone": "{profile.get('phone', '')}",
+                "location": "{profile.get('current_city', '')}",
+                "linkedin": "{profile.get('linkedin_url', '')}",
+                "github": "{profile.get('github_url', '')}",
+                "portfolio": "{profile.get('portfolio_url', '')}"
+            }},
+            "target_role": "{job.get('title', 'Software Engineer')}",
+            "target_company": "{job.get('company', 'Tech Company')}",
+            "summary": "Tailored 3-4 sentence professional summary",
+            "skills": {{
+                "Languages & Core": ["Python", "JavaScript", "..."],
+                "Frameworks & Web": ["FastAPI", "React", "..."],
+                "Cloud, Databases & AI/ML": ["PostgreSQL", "GenAI", "..."]
+            }},
+            "experiences": [
+                {{
+                    "company": "Company Name",
+                    "job_title": "Role Title",
+                    "location": "City or Remote",
+                    "dates": "Start - End Date",
+                    "bullets": [
+                        "Action-oriented bullet point 1 with technical detail and metrics",
+                        "Bullet point 2",
+                        "Bullet point 3"
+                    ]
+                }}
+            ],
+            "projects": [
+                {{
+                    "name": "Project Name",
+                    "description": "Short description",
+                    "technologies": "Tech stack",
+                    "bullets": [
+                        "Project achievement bullet point 1",
+                        "Project achievement bullet point 2"
+                    ]
+                }}
+            ],
+            "education": [
+                {{
+                    "degree": "Degree Name",
+                    "specialization": "Field of Study",
+                    "university": "University Name",
+                    "location": "City",
+                    "dates": "Start - End Date"
+                }}
+            ]
+        }}
+        Do not include markdown tags outside JSON. Return raw valid JSON.
+        """
+        try:
+            response = self.client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=prompt,
+            )
+            clean_text = response.text.replace("```json", "").replace("```", "").strip()
+            return json.loads(clean_text)
+        except Exception as e:
+            print(f"[GEMINI_RESUME_GEN_ERROR] {e}")
+            from app.ai.smart_mock import SmartMockAIProvider
+            return await SmartMockAIProvider().generate_tailored_resume(profile, master_resume_text, job)
 
     async def generate_answers(self, profile: Dict[str, Any], job: Dict[str, Any], questions: List[str]) -> Dict[str, str]:
         from app.ai.smart_mock import SmartMockAIProvider

@@ -111,14 +111,74 @@ class ProfileService:
         )
         db.add(master_rec)
         
-        # If user profile is empty, seed initial skills/experience from parsed text
-        if not profile.skills:
-            extracted_skills = []
-            for tech in ["Python", "FastAPI", "REST APIs", "PostgreSQL", "React", "TypeScript", "Docker", "Git"]:
-                if tech.lower() in parsed_text.lower():
-                    extracted_skills.append(Skill(category="Programming", name=tech, proficiency="Expert"))
-            if extracted_skills:
-                profile.skills.extend(extracted_skills)
+        # Deep AI parsing of uploaded master resume
+        if parsed_text and len(parsed_text.strip()) > 50:
+            try:
+                from app.ai.factory import get_ai_provider
+                ai_provider = get_ai_provider()
+                parsed_data = await ai_provider.parse_resume_text(parsed_text)
+                
+                # Update scalar info if empty
+                if not profile.first_name and parsed_data.get("first_name"): profile.first_name = parsed_data["first_name"]
+                if not profile.last_name and parsed_data.get("last_name"): profile.last_name = parsed_data["last_name"]
+                if not profile.phone and parsed_data.get("phone"): profile.phone = parsed_data["phone"]
+                if not profile.current_city and parsed_data.get("current_city"): profile.current_city = parsed_data["current_city"]
+                if not profile.country and parsed_data.get("country"): profile.country = parsed_data["country"]
+                if not profile.linkedin_url and parsed_data.get("linkedin_url"): profile.linkedin_url = parsed_data["linkedin_url"]
+                if not profile.github_url and parsed_data.get("github_url"): profile.github_url = parsed_data["github_url"]
+                if not profile.portfolio_url and parsed_data.get("portfolio_url"): profile.portfolio_url = parsed_data["portfolio_url"]
+                if not profile.summary and parsed_data.get("summary"): profile.summary = parsed_data["summary"]
+
+                # Populate skills if missing or minimal
+                if parsed_data.get("skills"):
+                    existing_skill_names = {s.name.lower() for s in profile.skills}
+                    for sk in parsed_data["skills"]:
+                        if isinstance(sk, dict) and sk.get("name") and sk["name"].lower() not in existing_skill_names:
+                            profile.skills.append(Skill(
+                                category=sk.get("category", "General"),
+                                name=sk["name"],
+                                proficiency="Expert"
+                            ))
+
+                # Populate experiences if missing
+                if not profile.experiences and parsed_data.get("experiences"):
+                    for exp in parsed_data["experiences"]:
+                        if isinstance(exp, dict) and exp.get("company"):
+                            profile.experiences.append(Experience(
+                                company=exp.get("company", ""),
+                                job_title=exp.get("job_title", "Software Engineer"),
+                                location=exp.get("location", ""),
+                                start_date=str(exp.get("start_date", "")),
+                                end_date=str(exp.get("end_date", "")),
+                                is_current=bool(exp.get("is_current", False)),
+                                technologies=str(exp.get("technologies", ""))
+                            ))
+
+                # Populate projects if missing
+                if not profile.projects and parsed_data.get("projects"):
+                    for proj in parsed_data["projects"]:
+                        if isinstance(proj, dict) and proj.get("name"):
+                            profile.projects.append(Project(
+                                name=proj.get("name", ""),
+                                description=proj.get("description", ""),
+                                technologies=str(proj.get("technologies", ""))
+                            ))
+
+                # Populate education if missing
+                if not profile.education and parsed_data.get("education"):
+                    for edu in parsed_data["education"]:
+                        if isinstance(edu, dict) and edu.get("degree"):
+                            profile.education.append(Education(
+                                degree=edu.get("degree", ""),
+                                specialization=edu.get("specialization", ""),
+                                university=edu.get("university", ""),
+                                location=edu.get("location", ""),
+                                start_date=str(edu.get("start_date", "")),
+                                end_date=str(edu.get("end_date", ""))
+                            ))
+
+            except Exception as e:
+                print(f"⚠️ Resume AI parsing warning: {e}")
 
         await db.commit()
         return {

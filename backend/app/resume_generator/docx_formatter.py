@@ -1,8 +1,10 @@
+import os
 import docx
 from docx.shared import Pt, Inches, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 
 def generate_docx_resume(resume_data: dict, output_path: str) -> str:
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
     doc = docx.Document()
 
     # Page setup
@@ -22,15 +24,20 @@ def generate_docx_resume(resume_data: dict, output_path: str) -> str:
     run.font.name = 'Calibri'
     run.font.size = Pt(18)
     run.font.bold = True
-    run.font.color.rgb = RGBColor(0x1E, 0x29, 0x3B)
+    run.font.color.rgb = RGBColor(0x0F, 0x17, 0x2A)
 
     # Contact
     contact_bits = []
     if p_info.get("email"): contact_bits.append(p_info["email"])
     if p_info.get("phone"): contact_bits.append(p_info["phone"])
-    if p_info.get("location"): contact_bits.append(p_info["location"])
+    
+    loc_raw = p_info.get("location") or ""
+    loc_clean = loc_raw.replace(", None", "").replace("None", "").strip(", ")
+    if loc_clean: contact_bits.append(loc_clean)
+
     if p_info.get("linkedin"): contact_bits.append(f"LinkedIn: {p_info['linkedin']}")
     if p_info.get("github"): contact_bits.append(f"GitHub: {p_info['github']}")
+    if p_info.get("portfolio"): contact_bits.append(f"Portfolio: {p_info['portfolio']}")
 
     c_p = doc.add_paragraph()
     c_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -58,23 +65,25 @@ def generate_docx_resume(resume_data: dict, output_path: str) -> str:
     # Skills
     if resume_data.get("skills"):
         add_section_heading("Technical Skills")
-        for cat, s_list in resume_data["skills"].items():
-            if s_list:
-                sk_p = doc.add_paragraph()
-                r1 = sk_p.add_run(f"{cat}: ")
-                r1.bold = True
-                r1.font.name = 'Calibri'
-                r1.font.size = Pt(10)
-                r2 = sk_p.add_run(", ".join(s_list))
-                r2.font.name = 'Calibri'
-                r2.font.size = Pt(10)
+        skills_dict = resume_data["skills"]
+        if isinstance(skills_dict, dict):
+            for cat, s_list in skills_dict.items():
+                if s_list and isinstance(s_list, list):
+                    sk_p = doc.add_paragraph()
+                    r1 = sk_p.add_run(f"{cat}: ")
+                    r1.bold = True
+                    r1.font.name = 'Calibri'
+                    r1.font.size = Pt(10)
+                    r2 = sk_p.add_run(", ".join(s_list))
+                    r2.font.name = 'Calibri'
+                    r2.font.size = Pt(10)
 
     # Experience
     if resume_data.get("experiences"):
         add_section_heading("Professional Experience")
         for exp in resume_data["experiences"]:
             ex_p = doc.add_paragraph()
-            r1 = ex_p.add_run(exp.get("job_title", ""))
+            r1 = ex_p.add_run(exp.get("job_title", "Software Engineer"))
             r1.bold = True
             r1.font.name = 'Calibri'
             r1.font.size = Pt(10.5)
@@ -84,7 +93,10 @@ def generate_docx_resume(resume_data: dict, output_path: str) -> str:
             r2.font.name = 'Calibri'
             r2.font.size = Pt(10)
 
-            for bullet in exp.get("bullets", []):
+            bullets = exp.get("bullets", [])
+            if not bullets and exp.get("description"):
+                bullets = [exp["description"]]
+            for bullet in bullets:
                 bp = doc.add_paragraph(style='List Bullet')
                 brun = bp.add_run(bullet)
                 brun.font.name = 'Calibri'
@@ -92,10 +104,10 @@ def generate_docx_resume(resume_data: dict, output_path: str) -> str:
 
     # Projects
     if resume_data.get("projects"):
-        add_section_heading("Key Projects")
+        add_section_heading("Key Technical Projects")
         for proj in resume_data["projects"]:
             pr_p = doc.add_paragraph()
-            r1 = pr_p.add_run(proj.get("name", ""))
+            r1 = pr_p.add_run(proj.get("name", "Project"))
             r1.bold = True
             r1.font.name = 'Calibri'
             r1.font.size = Pt(10.5)
@@ -104,7 +116,10 @@ def generate_docx_resume(resume_data: dict, output_path: str) -> str:
             r2.font.name = 'Calibri'
             r2.font.size = Pt(9.5)
 
-            for bullet in proj.get("bullets", []):
+            bullets = proj.get("bullets", [])
+            if not bullets and proj.get("description"):
+                bullets = [proj["description"]]
+            for bullet in bullets:
                 bp = doc.add_paragraph(style='List Bullet')
                 brun = bp.add_run(bullet)
                 brun.font.name = 'Calibri'
