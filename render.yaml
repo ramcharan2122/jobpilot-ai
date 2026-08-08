@@ -1,9 +1,9 @@
 services:
-  # 1. FastAPI Backend Web Service
+  # 1. FastAPI Backend Web Service with Playwright, Supabase, Resend & Gemini AI
   - type: web
     name: jobpilot-backend
     env: python
-    region: singapore # Or oregon / frankfurt
+    region: singapore
     buildCommand: "cd backend && pip install -r requirements.txt && python -m playwright install chromium"
     startCommand: "cd backend && PYTHONPATH=. uvicorn main:app --host 0.0.0.0 --port $PORT"
     envVars:
@@ -11,8 +11,22 @@ services:
         value: 3.12.7
       - key: SECRET_KEY
         generateValue: true
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
       - key: AI_PROVIDER
-        value: SMART_MOCK
+        value: "GEMINI"
+      - key: AI_API_KEY
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM_EMAIL
+        value: "JobPilot AI <onboarding@resend.dev>"
       - key: DEMO_MODE
         value: "false"
 
