@@ -51,11 +51,29 @@ async def download_resume(resume_id: int, format: str = "pdf", db: AsyncSession 
     res = await db.execute(select(GeneratedResume).filter(GeneratedResume.id == resume_id))
     rec = res.scalars().first()
     if not rec:
-        raise HTTPException(status_code=404, detail="Resume file not found.")
+        raise HTTPException(status_code=404, detail="Resume record not found.")
 
     file_path = rec.pdf_path if format.lower() == "pdf" else rec.docx_path
-    if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="File path does not exist on disk.")
+    if (not file_path or not os.path.exists(file_path)) and rec.content_json:
+        from app.resume_generator.pdf_formatter import generate_pdf_resume
+        from app.resume_generator.docx_formatter import generate_docx_resume
+        from app.core.config import settings
+        
+        pdf_path = os.path.join(settings.STORAGE_DIR, "resumes", f"resume_{rec.id}.pdf")
+        docx_path = os.path.join(settings.STORAGE_DIR, "resumes", f"resume_{rec.id}.docx")
+        
+        try:
+            generate_pdf_resume(rec.content_json, pdf_path)
+            generate_docx_resume(rec.content_json, docx_path)
+            rec.pdf_path = pdf_path
+            rec.docx_path = docx_path
+            await db.commit()
+            file_path = pdf_path if format.lower() == "pdf" else docx_path
+        except Exception as e:
+            print(f"⚠️ Failed to auto-regenerate resume file: {e}")
+
+    if not file_path or not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Resume file not found on disk.")
 
     media_type = "application/pdf" if format.lower() == "pdf" else "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     return FileResponse(file_path, media_type=media_type, filename=os.path.basename(file_path))
