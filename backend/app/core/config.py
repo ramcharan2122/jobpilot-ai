@@ -12,8 +12,12 @@ class Settings(BaseSettings):
     
     DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./jobpilot.db")
     
-    AI_PROVIDER: str = os.getenv("AI_PROVIDER", "SMART_MOCK")  # SMART_MOCK, OPENAI, GEMINI
+    AI_PROVIDER: str = os.getenv("AI_PROVIDER", "SMART_MOCK")
     AI_API_KEY: str = os.getenv("AI_API_KEY", "")
+    
+    # Resend Email Integration
+    RESEND_API_KEY: str = os.getenv("RESEND_API_KEY", "")
+    RESEND_FROM_EMAIL: str = os.getenv("RESEND_FROM_EMAIL", "JobPilot AI <onboarding@resend.dev>")
     
     DEMO_MODE: bool = os.getenv("DEMO_MODE", "true").lower() == "true"
     

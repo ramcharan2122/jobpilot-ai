@@ -3,12 +3,14 @@ from datetime import datetime, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from fastapi import HTTPException, status
+import resend
 from app.models.user import User
 from app.models.profile import Profile
 from app.models.settings import UserSettings
 from app.models.otp import EmailOTP
 from app.schemas.schemas import UserCreate, UserLogin
 from app.core.security import get_password_hash, verify_password, create_access_token
+from app.core.config import settings
 
 class AuthService:
     
@@ -39,10 +41,10 @@ class AuthService:
             last_name=last_name,
             email=new_user.email
         )
-        settings = UserSettings(user_id=new_user.id)
+        settings_rec = UserSettings(user_id=new_user.id)
         
         db.add(profile)
-        db.add(settings)
+        db.add(settings_rec)
         await db.commit()
         
         token = create_access_token(new_user.id)
@@ -86,14 +88,37 @@ class AuthService:
         )
         db.add(otp_rec)
         await db.commit()
-        
-        # Log code to console/file
+
+        # Send via Resend Email API if API key configured
+        resend_sent = False
+        if settings.RESEND_API_KEY:
+            try:
+                resend.api_key = settings.RESEND_API_KEY
+                resend.Emails.send({
+                    "from": settings.RESEND_FROM_EMAIL,
+                    "to": [email],
+                    "subject": f"Your JobPilot AI Verification Code: {otp_code}",
+                    "html": f"""
+                    <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #0f172a; color: #f8fafc; border-radius: 8px;">
+                        <h2 style="color: #38bdf8;">JobPilot AI Verification Code</h2>
+                        <p>Use the following 6-digit verification code to complete your login:</p>
+                        <div style="font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #10b981; margin: 20px 0;">{otp_code}</div>
+                        <p style="color: #94a3b8; font-size: 12px;">This code will expire in 10 minutes. If you did not request this email, please ignore it.</p>
+                    </div>
+                    """
+                })
+                resend_sent = True
+                print(f"[RESEND_EMAIL] OTP sent to {email} via Resend API")
+            except Exception as e:
+                print(f"[RESEND_EMAIL_ERROR] Failed to send via Resend: {str(e)}")
+
         print(f"[AUTH_EMAIL_OTP] 6-digit OTP code for {email}: {otp_code}")
-        
+
         return {
-            "message": f"6-Digit OTP sent successfully to {email}",
+            "message": f"6-Digit OTP code sent to {email} via {'Resend Email Service' if resend_sent else 'JobPilot Auth Service'}",
             "expires_in_minutes": 10,
-            "demo_otp_code": otp_code # Included for instant demonstration testing
+            "resend_delivered": resend_sent,
+            "demo_otp_code": otp_code # Provided for instant demonstration testing
         }
 
     @staticmethod
@@ -111,12 +136,10 @@ class AuthService:
         otp_rec.is_verified = True
         await db.commit()
         
-        # Find or register user
         u_res = await db.execute(select(User).filter(User.email == email))
         user = u_res.scalars().first()
         
         if not user:
-            # Auto-register user from verified OTP email
             user_in = UserCreate(email=email, password="otp_auth_user_2026", full_name=email.split("@")[0].title())
             return await AuthService.register_user(db, user_in)
             
