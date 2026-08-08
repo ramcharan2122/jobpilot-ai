@@ -218,77 +218,51 @@ class SmartMockAIProvider(AIProvider):
         raw_experiences = profile.get("experiences", [])
         if raw_experiences:
             for exp in raw_experiences:
-                techs = exp.get('technologies') or 'Python, REST APIs, SQL'
-                experiences.append({
-                    "company": exp.get("company", "Tech Company"),
-                    "job_title": exp.get("job_title", job_title),
-                    "location": exp.get("location", "Hyderabad, India"),
-                    "dates": f"{exp.get('start_date', '2023')} - {'Present' if exp.get('is_current') else exp.get('end_date', '2024')}",
-                    "bullets": [
-                        f"Architected and deployed production services using {techs}, improving system throughput and operational efficiency.",
-                        f"Designed and optimized database schemas, reducing query latency by 35% across core API endpoints.",
-                        f"Collaborated with cross-functional product and engineering teams to deliver robust software features."
-                    ]
-                })
-        else:
-            # Fallback experience entry if candidate profile experience is empty
-            experiences.append({
-                "company": "Software Engineering Enterprise",
-                "job_title": job_title,
-                "location": "Hyderabad, India",
-                "dates": "2023 - Present",
-                "bullets": [
-                    f"Engineered scalable backend microservices and RESTful API endpoints utilizing {', '.join(job.get('required_skills', ['Python', 'SQL'])[:3])}.",
-                    "Reduced core system latency by 40% through async I/O optimization and query caching strategies.",
-                    f"Implemented automated deployment pipelines and cloud infrastructure for {company} integration."
-                ]
-            })
+                c_name = exp.get("company")
+                if c_name:
+                    techs = exp.get('technologies') or 'Python, REST APIs, SQL'
+                    experiences.append({
+                        "company": c_name,
+                        "job_title": exp.get("job_title", job_title),
+                        "location": exp.get("location", ""),
+                        "dates": f"{exp.get('start_date', '')} - {'Present' if exp.get('is_current') else exp.get('end_date', '')}".strip(" -"),
+                        "bullets": [
+                            f"Architected and deployed production services using {techs}, improving system throughput and operational efficiency.",
+                            f"Designed and optimized database schemas, reducing query latency by 35% across core API endpoints.",
+                            f"Collaborated across engineering teams to build and ship production features for target scale."
+                        ]
+                    })
 
         projects = []
         raw_projects = profile.get("projects", [])
         if raw_projects:
             for proj in raw_projects:
-                techs = proj.get('technologies') or 'Python, React, PostgreSQL'
-                projects.append({
-                    "name": proj.get("name", "Full Stack Platform"),
-                    "description": proj.get("description", "Scalable web platform"),
-                    "technologies": techs,
-                    "bullets": [
-                        f"Built full-stack application using {techs}.",
-                        "Implemented secure authentication, responsive UI components, and automated data processing."
-                    ]
-                })
-        else:
-            # Fallback project entry
-            projects.append({
-                "name": f"{job_title} AI Platform",
-                "description": "High-concurrency full stack web application",
-                "technologies": ", ".join(job.get("required_skills", ["Python", "FastAPI", "React"])),
-                "bullets": [
-                    f"Developed end-to-end web platform leveraging {', '.join(job.get('required_skills', ['Python', 'React'])[:3])}.",
-                    "Built asynchronous data pipelines handling 10k+ daily transactions with 99.9% uptime."
-                ]
-            })
+                p_name = proj.get("name")
+                if p_name:
+                    techs = proj.get('technologies') or 'Python, React, PostgreSQL'
+                    projects.append({
+                        "name": p_name,
+                        "description": proj.get("description", ""),
+                        "technologies": techs,
+                        "bullets": [
+                            f"Built full-stack application using {techs}.",
+                            "Implemented secure authentication, responsive UI components, and automated data processing."
+                        ]
+                    })
 
         education = []
         raw_education = profile.get("education", [])
         if raw_education:
             for edu in raw_education:
-                education.append({
-                    "degree": edu.get("degree", "B.Tech"),
-                    "specialization": edu.get("specialization", "Computer Science"),
-                    "university": edu.get("university", "University"),
-                    "location": edu.get("location", ""),
-                    "dates": f"{edu.get('start_date', '2020')} - {edu.get('end_date', '2024')}"
-                })
-        else:
-            education.append({
-                "degree": "B.Tech",
-                "specialization": "Computer Science & Engineering",
-                "university": "State Technological University",
-                "location": "Hyderabad, India",
-                "dates": "2020 - 2024"
-            })
+                u_name = edu.get("university") or edu.get("degree")
+                if u_name:
+                    education.append({
+                        "degree": edu.get("degree", ""),
+                        "specialization": edu.get("specialization", ""),
+                        "university": edu.get("university", ""),
+                        "location": edu.get("location", ""),
+                        "dates": f"{edu.get('start_date', '')} - {edu.get('end_date', '')}".strip(" -")
+                    })
 
         # Categorize skills
         skills_by_cat = {}
