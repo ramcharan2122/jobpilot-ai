@@ -48,26 +48,31 @@ class ProfileService:
         if profile_in.personal_website is not None: profile.personal_website = profile_in.personal_website
         if profile_in.summary is not None: profile.summary = profile_in.summary
 
-        # Clear existing collections and replace with updated ones
-        profile.education.clear()
-        for edu in profile_in.education:
-            profile.education.append(Education(**edu.dict(exclude={"id"})))
+        # Clear existing collections and replace ONLY if non-empty lists are provided
+        if profile_in.education:
+            profile.education.clear()
+            for edu in profile_in.education:
+                profile.education.append(Education(**edu.dict(exclude={"id"})))
 
-        profile.experiences.clear()
-        for exp in profile_in.experiences:
-            profile.experiences.append(Experience(**exp.dict(exclude={"id"})))
+        if profile_in.experiences:
+            profile.experiences.clear()
+            for exp in profile_in.experiences:
+                profile.experiences.append(Experience(**exp.dict(exclude={"id"})))
 
-        profile.skills.clear()
-        for sk in profile_in.skills:
-            profile.skills.append(Skill(**sk.dict(exclude={"id"})))
+        if profile_in.skills:
+            profile.skills.clear()
+            for sk in profile_in.skills:
+                profile.skills.append(Skill(**sk.dict(exclude={"id"})))
 
-        profile.projects.clear()
-        for proj in profile_in.projects:
-            profile.projects.append(Project(**proj.dict(exclude={"id"})))
+        if profile_in.projects:
+            profile.projects.clear()
+            for proj in profile_in.projects:
+                profile.projects.append(Project(**proj.dict(exclude={"id"})))
 
-        profile.certifications.clear()
-        for cert in profile_in.certifications:
-            profile.certifications.append(Certification(**cert.dict(exclude={"id"})))
+        if profile_in.certifications:
+            profile.certifications.clear()
+            for cert in profile_in.certifications:
+                profile.certifications.append(Certification(**cert.dict(exclude={"id"})))
 
         await db.commit()
         await db.refresh(profile)

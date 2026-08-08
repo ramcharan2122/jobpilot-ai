@@ -41,32 +41,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
         last_name: lastName,
         current_city: city,
         phone: phone,
-        country: 'India',
-        skills: [
-          { category: 'Programming', name: 'Python', proficiency: 'Expert' },
-          { category: 'Frameworks', name: 'FastAPI', proficiency: 'Expert' },
-          { category: 'Databases', name: 'PostgreSQL', proficiency: 'Intermediate' },
-          { category: 'Cloud', name: 'AWS', proficiency: 'Intermediate' }
-        ],
-        experiences: [
-          {
-            company: 'Tech Solutions Inc',
-            job_title: 'Software Developer',
-            location: 'Bangalore',
-            start_date: '2023-06',
-            is_current: true,
-            technologies: 'Python, FastAPI, REST APIs, PostgreSQL'
-          }
-        ],
-        education: [
-          {
-            degree: 'B.Tech',
-            specialization: 'Computer Science & Engineering',
-            university: 'National Institute of Technology',
-            start_date: '2019',
-            end_date: '2023'
-          }
-        ]
+        country: 'India'
       });
 
       await api.updateSettings({

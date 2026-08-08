@@ -169,35 +169,11 @@ class SmartMockAIProvider(AIProvider):
             "phone": phone,
             "current_city": "Hyderabad" if "hyderabad" in text_lower else ("Bangalore" if "bangalore" in text_lower else ""),
             "country": "India",
-            "summary": f"Experienced software engineer with expertise in {', '.join([s['name'] for s in extracted_skills[:4]])}.",
+            "summary": f"Experienced software engineer with expertise in {', '.join([s['name'] for s in extracted_skills[:4]])}." if extracted_skills else "",
             "skills": extracted_skills,
-            "experiences": [
-                {
-                    "company": "Tech Solutions",
-                    "job_title": "Software Engineer",
-                    "location": "Hyderabad, India",
-                    "start_date": "2023",
-                    "end_date": "Present",
-                    "is_current": True,
-                    "technologies": ", ".join([s["name"] for s in extracted_skills[:4]])
-                }
-            ],
-            "projects": [
-                {
-                    "name": "Full-Stack Web Application",
-                    "description": "High-performance scalable web platform",
-                    "technologies": ", ".join([s["name"] for s in extracted_skills[:4]])
-                }
-            ],
-            "education": [
-                {
-                    "degree": "B.Tech",
-                    "specialization": "Computer Science & Engineering",
-                    "university": "University",
-                    "start_date": "2020",
-                    "end_date": "2024"
-                }
-            ]
+            "experiences": [],
+            "projects": [],
+            "education": []
         }
 
     async def generate_tailored_resume(self, profile: Dict[str, Any], master_resume_text: str, job: Dict[str, Any]) -> Dict[str, Any]:
