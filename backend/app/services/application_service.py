@@ -80,7 +80,16 @@ class ApplicationService:
             await db.commit()
 
             # 3. Generate Custom Application Question Answers & Cover Letter
-            p_res = await db.execute(select(Profile).filter(Profile.user_id == app.user_id))
+            p_res = await db.execute(
+                select(Profile)
+                .options(
+                    selectinload(Profile.skills),
+                    selectinload(Profile.experiences),
+                    selectinload(Profile.projects),
+                    selectinload(Profile.education)
+                )
+                .filter(Profile.user_id == app.user_id)
+            )
             profile = p_res.scalars().first()
             profile_dict = {
                 "first_name": profile.first_name if profile else "Applicant",

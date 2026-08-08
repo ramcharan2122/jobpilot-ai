@@ -2,6 +2,7 @@ import os
 from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.orm import selectinload
 from fastapi import HTTPException
 from app.models.resume import GeneratedResume
 from app.models.job import Job
@@ -29,7 +30,16 @@ class ResumeService:
         if not job:
             raise HTTPException(status_code=404, detail="Job not found.")
 
-        p_res = await db.execute(select(Profile).filter(Profile.user_id == user_id))
+        p_res = await db.execute(
+            select(Profile)
+            .options(
+                selectinload(Profile.skills),
+                selectinload(Profile.experiences),
+                selectinload(Profile.projects),
+                selectinload(Profile.education)
+            )
+            .filter(Profile.user_id == user_id)
+        )
         profile = p_res.scalars().first()
         if not profile:
             from app.models.user import User
