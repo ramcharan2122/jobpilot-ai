@@ -143,17 +143,27 @@ export const ApplicationsPage: React.FC = () => {
                   <td>{getStatusBadge(app.status)}</td>
                   <td>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                      <button className="btn-secondary" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => { setSelectedApp(app); setViewTab('details'); }}>
+                      <button
+                        className="btn-secondary"
+                        style={{ padding: '6px 12px', fontSize: '12px' }}
+                        onClick={() => {
+                          setSelectedApp(app);
+                          setViewTab(app.status === 'ACTION_REQUIRED' ? 'embedded_portal' : 'details');
+                        }}
+                      >
                         Details
                       </button>
 
                       {app.status === 'ACTION_REQUIRED' && (
                         <button
                           className="btn-primary"
-                          style={{ padding: '6px 12px', fontSize: '12px', background: 'var(--accent-amber)', color: '#0f172a', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                          onClick={() => { setSelectedApp(app); setViewTab('embedded_portal'); }}
+                          style={{ padding: '6px 12px', fontSize: '12px', background: 'var(--accent-amber)', color: '#0f172a', display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 700 }}
+                          onClick={() => {
+                            setSelectedApp(app);
+                            setViewTab('embedded_portal');
+                          }}
                         >
-                          <Monitor size={12} /> Verify Portal
+                          <Monitor size={12} /> Embedded View
                         </button>
                       )}
                       
