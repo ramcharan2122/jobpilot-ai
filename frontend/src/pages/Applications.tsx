@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, RefreshCw, Loader2, CheckCircle, ExternalLink, ShieldAlert, Monitor } from 'lucide-react';
+import { FileText, RefreshCw, Loader2, CheckCircle, ExternalLink, ShieldAlert, Monitor, Camera } from 'lucide-react';
 import { api, getDownloadUrl } from '../api/client';
 import type { Application } from '../types';
 
@@ -8,7 +8,7 @@ export const ApplicationsPage: React.FC = () => {
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [submittingId, setSubmittingId] = useState<number | null>(null);
-  const [viewTab, setViewTab] = useState<'details' | 'embedded_portal'>('details');
+  const [viewTab, setViewTab] = useState<'details' | 'embedded_portal' | 'proof_screenshot'>('details');
 
   useEffect(() => {
     fetchApplications();
@@ -84,7 +84,7 @@ export const ApplicationsPage: React.FC = () => {
       <div className="top-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div className="page-title">
           <h1>Applications Tracker</h1>
-          <p>Track job submission status, view tailored resumes, and complete verification handoffs.</p>
+          <p>Track job submission status, view tailored resumes, and verify submission proof.</p>
         </div>
         <button className="btn-secondary" onClick={() => fetchApplications()} disabled={loading} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <RefreshCw size={14} className={loading ? 'spin' : ''} />
@@ -166,9 +166,23 @@ export const ApplicationsPage: React.FC = () => {
                       </button>
 
                       {app.status === 'SUBMITTED' ? (
-                        <span style={{ color: 'var(--accent-emerald)', fontWeight: 700, fontSize: '12.5px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                          <CheckCircle size={14} /> Submitted
-                        </span>
+                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                          <span style={{ color: 'var(--accent-emerald)', fontWeight: 700, fontSize: '12.5px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            <CheckCircle size={14} /> Submitted
+                          </span>
+                          {app.screenshot_url && (
+                            <a
+                              href={getDownloadUrl(app.screenshot_url)}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="btn-secondary"
+                              style={{ padding: '4px 8px', fontSize: '11.5px', display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'rgba(16, 185, 129, 0.15)', color: 'var(--accent-emerald)', border: '1px solid rgba(16, 185, 129, 0.3)' }}
+                              title="View Playwright Proof Screenshot"
+                            >
+                              <Camera size={12} /> View Proof
+                            </a>
+                          )}
+                        </div>
                       ) : (
                         <button
                           className="btn-primary"
@@ -211,6 +225,15 @@ export const ApplicationsPage: React.FC = () => {
                 >
                   <Monitor size={12} /> Embedded Portal View
                 </button>
+                {selectedApp.screenshot_url && (
+                  <button
+                    className={viewTab === 'proof_screenshot' ? 'btn-primary' : 'btn-secondary'}
+                    style={{ padding: '6px 14px', fontSize: '12px', background: viewTab === 'proof_screenshot' ? 'var(--accent-emerald)' : 'transparent', color: viewTab === 'proof_screenshot' ? '#0f172a' : 'var(--text-primary)' }}
+                    onClick={() => setViewTab('proof_screenshot')}
+                  >
+                    <Camera size={12} /> Visual Proof
+                  </button>
+                )}
               </div>
             </div>
 
@@ -228,7 +251,7 @@ export const ApplicationsPage: React.FC = () => {
                       className="btn-primary"
                       style={{ fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'var(--accent-amber)', color: '#0f172a', fontWeight: 700, padding: '8px 14px', whiteSpace: 'nowrap' }}
                     >
-                      Open in New Tab <ExternalLink size={14} />
+                      Open Submission Page <ExternalLink size={14} />
                     </a>
                   )}
                 </div>
@@ -258,6 +281,35 @@ export const ApplicationsPage: React.FC = () => {
                   >
                     ✓ I Verified — Re-Submit Application via AI
                   </button>
+                </div>
+              </div>
+            ) : viewTab === 'proof_screenshot' && selectedApp.screenshot_url ? (
+              <div>
+                <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '12px 16px', borderRadius: 'var(--radius-md)', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ fontSize: '13px', color: 'var(--accent-emerald)' }}>
+                    <strong>Automated Playwright Proof Screenshot:</strong> Captured at the exact moment of form submission.
+                  </div>
+                  <a
+                    href={getDownloadUrl(selectedApp.screenshot_url)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="btn-secondary"
+                    style={{ fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'rgba(16, 185, 129, 0.2)', color: 'var(--accent-emerald)' }}
+                  >
+                    Full Resolution Image <ExternalLink size={12} />
+                  </a>
+                </div>
+
+                <div style={{ border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: 'var(--radius-md)', overflow: 'hidden', maxHeight: '420px', textAlign: 'center', background: '#0f172a' }}>
+                  <img
+                    src={getDownloadUrl(selectedApp.screenshot_url)}
+                    alt="Application Submission Proof Screenshot"
+                    style={{ maxWidth: '100%', maxHeight: '420px', objectFit: 'contain' }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
+                  <button className="btn-secondary" onClick={() => setSelectedApp(null)}>Close</button>
                 </div>
               </div>
             ) : (

@@ -156,6 +156,7 @@ export interface Application {
   cover_letter?: string;
   error_type?: string;
   error_message?: string;
+  screenshot_url?: string;
   submitted_at?: string;
   created_at: string;
 }

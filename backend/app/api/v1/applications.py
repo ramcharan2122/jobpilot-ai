@@ -74,6 +74,7 @@ async def list_applications(current_user: User = Depends(get_current_user), db: 
             } if a.job else None,
             "resume_id": a.resume_id,
             "pdf_url": f"/api/v1/resumes/download/{a.resume_id}?format=pdf" if a.resume_id else None,
+            "screenshot_url": f"/storage/screenshots/prod_app_{a.id}.png" if a.screenshot_path or os.path.exists(os.path.join(settings.STORAGE_DIR, "screenshots", f"prod_app_{a.id}.png")) else None,
             "answers_json": a.answers_json or {},
             "cover_letter": a.cover_letter,
             "error_type": a.error_type,
