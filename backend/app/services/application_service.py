@@ -22,6 +22,11 @@ class ApplicationService:
         )
         existing = res.scalars().first()
         if existing:
+            existing.application_mode = mode or existing.application_mode
+            existing.status = "APPLYING"
+            existing.created_at = datetime.utcnow()
+            await db.commit()
+            await ApplicationService.process_application(db, existing.id)
             return existing
 
         s_res = await db.execute(select(UserSettings).filter(UserSettings.user_id == user_id))

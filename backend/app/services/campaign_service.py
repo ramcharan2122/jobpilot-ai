@@ -59,14 +59,6 @@ class CampaignService:
             if applied_count >= campaign.daily_limit:
                 break
                 
-            match_rec = await MatchingService.evaluate_job_match(db, campaign.user_id, job, profile, settings)
-            
-            # Filter checks
-            if match_rec.eligibility_status != "ELIGIBLE":
-                continue
-            if match_rec.match_score < campaign.min_match_score:
-                continue
-
             total_elig += 1
             
             # Apply
