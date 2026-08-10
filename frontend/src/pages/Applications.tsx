@@ -339,6 +339,21 @@ export const ApplicationsPage: React.FC = () => {
                   </div>
                 )}
 
+                {selectedApp.answers_json?._playwright_audit_log && (
+                  <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '16px', borderRadius: 'var(--radius-md)', marginBottom: '16px' }}>
+                    <strong style={{ color: 'var(--accent-emerald)', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <CheckCircle size={16} /> Playwright Automation Field Fill & Submission Audit Log:
+                    </strong>
+                    <ul style={{ marginTop: '10px', fontSize: '12.5px', paddingLeft: '20px', lineHeight: '1.6' }}>
+                      {((selectedApp.answers_json._playwright_audit_log as unknown) as string[]).map((logItem: string, idx: number) => (
+                        <li key={idx} style={{ color: logItem.includes('Clicked') || logItem.includes('Attached') || logItem.includes('Filled') ? 'var(--accent-emerald)' : 'var(--text-secondary)' }}>
+                          {logItem}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
                 <div style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '16px', borderRadius: 'var(--radius-md)', marginBottom: '16px', maxHeight: '250px', overflowY: 'auto' }}>
                   <strong style={{ color: 'var(--text-primary)', fontSize: '14px' }}>AI Generated Custom Answer Fields:</strong>
                   {Object.keys(selectedApp.answers_json || {}).length === 0 ? (

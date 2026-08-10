@@ -157,6 +157,13 @@ class ApplicationService:
             app.error_type = auto_res.get("error_type")
             app.error_message = auto_res.get("error_message")
             app.screenshot_path = auto_res.get("screenshot_path")
+            
+            # Save detailed Playwright field audit log
+            ans_dict = dict(app.answers_json or {})
+            if "audit_log" in auto_res:
+                ans_dict["_playwright_audit_log"] = auto_res["audit_log"]
+            app.answers_json = ans_dict
+
             if app.status == "SUBMITTED":
                 app.submitted_at = datetime.utcnow()
 
