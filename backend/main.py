@@ -1,5 +1,6 @@
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
@@ -33,6 +34,15 @@ os.makedirs(os.path.join(settings.STORAGE_DIR, "resumes"), exist_ok=True)
 app.mount("/storage", StaticFiles(directory=settings.STORAGE_DIR), name="storage")
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    import traceback
+    traceback.print_exc()
+    return JSONResponse(
+        status_code=500,
+        content={"detail": f"Server error: {str(exc)}"}
+    )
 
 @app.on_event("startup")
 async def startup_event():

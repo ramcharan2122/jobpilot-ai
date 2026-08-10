@@ -40,6 +40,23 @@ const authHeaders = (): Record<string, string> => {
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
+const handleResponse = async (res: Response, defaultError: string) => {
+  if (!res.ok) {
+    let errorDetail = defaultError;
+    try {
+      const err = await res.json();
+      errorDetail = err.detail || err.message || defaultError;
+    } catch {
+      try {
+        const text = await res.text();
+        if (text) errorDetail = text;
+      } catch {}
+    }
+    throw new Error(errorDetail);
+  }
+  return res.json();
+};
+
 export const api = {
   async register(data: any) {
     const res = await fetch(`${API_BASE}/auth/register`, {
@@ -47,11 +64,7 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.detail || 'Registration failed');
-    }
-    return res.json();
+    return handleResponse(res, 'Registration failed');
   },
 
   async login(data: any) {
@@ -60,11 +73,7 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.detail || 'Login failed');
-    }
-    return res.json();
+    return handleResponse(res, 'Login failed');
   },
 
   async sendOtp(email: string) {
@@ -73,11 +82,7 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email })
     });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.detail || 'Failed to send OTP');
-    }
-    return res.json();
+    return handleResponse(res, 'Failed to send OTP');
   },
 
   async verifyOtp(email: string, otp_code: string) {
