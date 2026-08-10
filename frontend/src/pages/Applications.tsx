@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, RefreshCw, Loader2, ExternalLink } from 'lucide-react';
+import { FileText, RefreshCw, Loader2, CheckCircle } from 'lucide-react';
 import { api, getDownloadUrl } from '../api/client';
 import type { Application } from '../types';
 
@@ -141,24 +141,16 @@ export const ApplicationsPage: React.FC = () => {
                   </td>
                   <td>{getStatusBadge(app.status)}</td>
                   <td>
-                    <div style={{ display: 'flex', gap: '8px' }}>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                       <button className="btn-secondary" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => setSelectedApp(app)}>
                         Details
                       </button>
                       
-                      {app.status === 'ACTION_REQUIRED' && app.job?.application_url && (
-                        <a
-                          href={app.job.application_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="btn-primary"
-                          style={{ padding: '6px 12px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'var(--accent-amber)', color: '#0f172a' }}
-                        >
-                          Complete Step <ExternalLink size={12} />
-                        </a>
-                      )}
-
-                      {app.status !== 'SUBMITTED' && app.status !== 'ACTION_REQUIRED' && (
+                      {app.status === 'SUBMITTED' ? (
+                        <span style={{ color: 'var(--accent-emerald)', fontWeight: 700, fontSize: '12.5px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          <CheckCircle size={14} /> Submitted
+                        </span>
+                      ) : (
                         <button
                           className="btn-primary"
                           style={{ padding: '6px 12px', fontSize: '12px' }}
