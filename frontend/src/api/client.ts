@@ -9,16 +9,9 @@ const getApiBase = (): string => {
     if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
       return 'http://localhost:8000/api/v1';
     }
-    if (origin.includes('jobpilot-frontend.onrender.com')) {
-      return 'https://jobpilot-backend.onrender.com/api/v1';
-    }
-    if (origin.includes('onrender.com')) {
-      const backendDomain = origin.replace('-frontend', '-backend');
-      return `${backendDomain}/api/v1`;
-    }
-    return `${origin}/api/v1`;
+    return 'https://jobpilot-ai2122.onrender.com/api/v1';
   }
-  return 'http://localhost:8000/api/v1';
+  return 'https://jobpilot-ai2122.onrender.com/api/v1';
 };
 
 export const API_BASE = getApiBase();
