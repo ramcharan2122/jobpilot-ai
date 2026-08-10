@@ -103,9 +103,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
             <span>INTERVIEWS & OFFERS</span>
             <Award size={18} style={{ color: 'var(--accent-emerald)' }} />
           </div>
-          <div className="stat-value" style={{ color: 'var(--accent-emerald)' }}>{stats?.interviews ?? 7} / {stats?.offers ?? 1}</div>
+          <div className="stat-value" style={{ color: 'var(--accent-emerald)' }}>{stats?.interviews ?? 0} / {stats?.offers ?? 0}</div>
           <div className="stat-trend positive">
-            <span>1 Offer Received</span>
+            <span>{stats?.offers === 1 ? '1 Offer Received' : `${stats?.offers ?? 0} Offers Received`}</span>
           </div>
         </div>
       </div>

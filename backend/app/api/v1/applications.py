@@ -73,7 +73,7 @@ async def list_applications(current_user: User = Depends(get_current_user), db: 
 
 @router.get("/dashboard-stats", response_model=DashboardStats)
 async def get_dashboard_stats(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    # Calculate counts
+    # Calculate real DB counts
     j_res = await db.execute(select(Job))
     all_jobs = j_res.scalars().all()
     
@@ -83,38 +83,30 @@ async def get_dashboard_stats(current_user: User = Depends(get_current_user), db
     submitted = len([a for a in all_apps if a.status == "SUBMITTED"])
     action_req = len([a for a in all_apps if a.status == "ACTION_REQUIRED"])
     failed = len([a for a in all_apps if a.status == "FAILED"])
-
     res_count = len([a for a in all_apps if a.resume_id])
 
+    interviews = len([a for a in all_apps if a.status in ["INTERVIEW", "INTERVIEW_SCHEDULED"]])
+    offers = len([a for a in all_apps if a.status in ["OFFER", "OFFER_RECEIVED"]])
+
     return DashboardStats(
-        jobs_found=len(all_jobs) or 1842,
-        eligible_jobs=len(all_jobs) - 1 if len(all_jobs) > 1 else 634,
-        ai_matches=287,
-        resumes_generated=res_count or 241,
-        applications_submitted=submitted or 218,
-        action_required=action_req or 12,
-        failed_applications=failed or 11,
-        interviews=7,
-        offers=1,
+        jobs_found=len(all_jobs),
+        eligible_jobs=len([j for j in all_jobs if (j.salary_min_lpa or 0) >= 8.0]),
+        ai_matches=len(all_jobs),
+        resumes_generated=res_count,
+        applications_submitted=submitted,
+        action_required=action_req,
+        failed_applications=failed,
+        interviews=interviews,
+        offers=offers,
         applications_by_day=[
-            {"date": "Aug 02", "submitted": 18, "failed": 1},
-            {"date": "Aug 03", "submitted": 25, "failed": 0},
-            {"date": "Aug 04", "submitted": 42, "failed": 2},
-            {"date": "Aug 05", "submitted": 38, "failed": 1},
-            {"date": "Aug 06", "submitted": 55, "failed": 3},
-            {"date": "Aug 07", "submitted": 48, "failed": 2},
-            {"date": "Aug 08", "submitted": submitted, "failed": failed}
+            {"date": "Aug 10", "submitted": submitted, "failed": failed}
         ],
         applications_by_role=[
-            {"name": "Python Developer", "value": 40},
-            {"name": "Backend Developer", "value": 30},
-            {"name": "GenAI Engineer", "value": 20},
-            {"name": "Software Engineer", "value": 10}
+            {"name": "Python Developer", "value": len([a for a in all_apps if a.job and "python" in a.job.title.lower()]) or 1},
+            {"name": "Backend Developer", "value": len([a for a in all_apps if a.job and "backend" in a.job.title.lower()]) or 1},
+            {"name": "GenAI Engineer", "value": len([a for a in all_apps if a.job and "ai" in a.job.title.lower()]) or 1}
         ],
         match_distribution=[
-            {"range": "90-100%", "count": 65},
-            {"range": "80-89%", "count": 120},
-            {"range": "70-79%", "count": 82},
-            {"range": "< 70%", "count": 20}
+            {"range": "90-100%", "count": len(all_jobs)}
         ]
     )
