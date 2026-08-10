@@ -2,6 +2,7 @@ import random
 from datetime import datetime, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy import func
 from fastapi import HTTPException, status
 import resend
 from app.models.user import User
@@ -16,16 +17,17 @@ class AuthService:
     
     @staticmethod
     async def register_user(db: AsyncSession, user_in: UserCreate) -> dict:
-        result = await db.execute(select(User).filter(User.email == user_in.email))
+        clean_email = user_in.email.strip().lower()
+        result = await db.execute(select(User).filter(func.lower(User.email) == clean_email))
         existing_user = result.scalars().first()
         if existing_user:
             raise HTTPException(status_code=400, detail="User with this email already exists.")
             
         hashed_pwd = get_password_hash(user_in.password)
         new_user = User(
-            email=user_in.email,
+            email=clean_email,
             hashed_password=hashed_pwd,
-            full_name=user_in.full_name or user_in.email.split("@")[0].title()
+            full_name=user_in.full_name or clean_email.split("@")[0].title()
         )
         db.add(new_user)
         await db.commit()
@@ -60,7 +62,8 @@ class AuthService:
 
     @staticmethod
     async def authenticate_user(db: AsyncSession, user_in: UserLogin) -> dict:
-        result = await db.execute(select(User).filter(User.email == user_in.email))
+        clean_email = user_in.email.strip().lower()
+        result = await db.execute(select(User).filter(func.lower(User.email) == clean_email))
         user = result.scalars().first()
         if not user:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Account not found. Please click Register below to create an account first.")
@@ -81,11 +84,12 @@ class AuthService:
 
     @staticmethod
     async def send_email_otp(db: AsyncSession, email: str) -> dict:
+        clean_email = email.strip().lower()
         otp_code = str(random.randint(100000, 999999))
         expires_at = datetime.utcnow() + timedelta(minutes=10)
         
         otp_rec = EmailOTP(
-            email=email,
+            email=clean_email,
             otp_code=otp_code,
             expires_at=expires_at
         )
@@ -93,13 +97,12 @@ class AuthService:
         await db.commit()
 
         # Send via Resend Email API if API key configured
-        resend_sent = False
         if settings.RESEND_API_KEY:
             try:
                 resend.api_key = settings.RESEND_API_KEY
                 resend.Emails.send({
                     "from": settings.RESEND_FROM_EMAIL,
-                    "to": [email],
+                    "to": [clean_email],
                     "subject": f"Your JobPilot AI Verification Code: {otp_code}",
                     "html": f"""
                     <div style="font-family: Arial, sans-serif; padding: 24px; background-color: #0f172a; color: #f8fafc; border-radius: 12px;">
@@ -110,23 +113,21 @@ class AuthService:
                     </div>
                     """
                 })
-                resend_sent = True
-                print(f"[RESEND_EMAIL] OTP sent to {email} via Resend API")
+                print(f"[RESEND_EMAIL] OTP sent to {clean_email} via Resend API")
             except Exception as e:
                 print(f"[RESEND_EMAIL_ERROR] Failed to send via Resend: {str(e)}")
 
-        print(f"[AUTH_EMAIL_OTP] Sent verification email to {email}")
-
         return {
-            "message": f"6-Digit verification code sent to {email}. Please check your email inbox.",
+            "message": f"6-Digit verification code sent to {clean_email}. Please check your email inbox.",
             "expires_in_minutes": 10
         }
 
     @staticmethod
     async def verify_email_otp(db: AsyncSession, email: str, otp_code: str) -> dict:
+        clean_email = email.strip().lower()
         res = await db.execute(
             select(EmailOTP)
-            .filter(EmailOTP.email == email, EmailOTP.otp_code == otp_code, EmailOTP.is_verified == False)
+            .filter(func.lower(EmailOTP.email) == clean_email, EmailOTP.otp_code == otp_code.strip(), EmailOTP.is_verified == False)
             .order_by(EmailOTP.created_at.desc())
         )
         otp_rec = res.scalars().first()
@@ -137,11 +138,11 @@ class AuthService:
         otp_rec.is_verified = True
         await db.commit()
         
-        u_res = await db.execute(select(User).filter(User.email == email))
+        u_res = await db.execute(select(User).filter(func.lower(User.email) == clean_email))
         user = u_res.scalars().first()
         
         if not user:
-            user_in = UserCreate(email=email, password="otp_auth_user_2026", full_name=email.split("@")[0].title())
+            user_in = UserCreate(email=clean_email, password="otp_auth_user_2026", full_name=clean_email.split("@")[0].title())
             return await AuthService.register_user(db, user_in)
             
         token = create_access_token(user.id)
@@ -180,11 +181,12 @@ class AuthService:
         if not email:
             raise HTTPException(status_code=400, detail="Invalid Google authentication token.")
 
-        u_res = await db.execute(select(User).filter(User.email == email))
+        clean_email = email.strip().lower()
+        u_res = await db.execute(select(User).filter(func.lower(User.email) == clean_email))
         user = u_res.scalars().first()
         
         if not user:
-            user_in = UserCreate(email=email, password="google_oauth_user_2026", full_name=full_name)
+            user_in = UserCreate(email=clean_email, password="google_oauth_user_2026", full_name=full_name)
             return await AuthService.register_user(db, user_in)
             
         token = create_access_token(user.id)

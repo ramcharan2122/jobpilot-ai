@@ -30,18 +30,19 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 
 @app.on_event("startup")
 async def startup_event():
-    global engine, AsyncSessionLocal
-    try:
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-    except Exception as e:
-        print(f"⚠️ Primary database connection failed ({e}). Falling back to local SQLite database.")
-        from sqlalchemy.ext.asyncio import create_async_engine
-        sqlite_url = "sqlite+aiosqlite:///./jobpilot.db"
-        engine = create_async_engine(sqlite_url, echo=False, future=True, connect_args={"check_same_thread": False})
-        AsyncSessionLocal.configure(bind=engine)
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
+    import asyncio
+    max_retries = 5
+    for attempt in range(1, max_retries + 1):
+        try:
+            async with engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
+            print(f"✅ Persistent Supabase Cloud PostgreSQL connected & schema verified on attempt {attempt}.")
+            break
+        except Exception as e:
+            print(f"⚠️ Database connection attempt {attempt}/{max_retries} failed: {e}")
+            if attempt == max_retries:
+                print("❌ Max database connection retries reached.")
+            await asyncio.sleep(2)
         
     try:
         async with AsyncSessionLocal() as session:
