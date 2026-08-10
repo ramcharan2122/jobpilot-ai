@@ -1,9 +1,27 @@
 import type { Profile, UserSettings, Job, Application, Campaign, DashboardStats } from '../types';
 
-export const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL ||
-  (typeof window !== 'undefined' && !window.location.origin.includes('localhost')
-    ? `${window.location.origin}/api/v1`
-    : 'http://localhost:8000/api/v1');
+const getApiBase = (): string => {
+  const envUrl = (import.meta as any).env?.VITE_API_BASE_URL;
+  if (envUrl && envUrl.trim()) return envUrl.trim();
+
+  if (typeof window !== 'undefined') {
+    const origin = window.location.origin;
+    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      return 'http://localhost:8000/api/v1';
+    }
+    if (origin.includes('jobpilot-frontend.onrender.com')) {
+      return 'https://jobpilot-backend.onrender.com/api/v1';
+    }
+    if (origin.includes('onrender.com')) {
+      const backendDomain = origin.replace('-frontend', '-backend');
+      return `${backendDomain}/api/v1`;
+    }
+    return `${origin}/api/v1`;
+  }
+  return 'http://localhost:8000/api/v1';
+};
+
+export const API_BASE = getApiBase();
 
 export const getDownloadUrl = (path: string): string => {
   if (!path) return '#';
