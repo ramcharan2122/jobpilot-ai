@@ -1,3 +1,4 @@
+import os
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,6 +11,7 @@ from app.models.application import Application
 from app.models.job import Job
 from app.models.resume import GeneratedResume
 from app.models.user import User
+from app.core.config import settings
 from app.api.v1.deps import get_current_user
 
 router = APIRouter(prefix="/applications", tags=["Applications"])
