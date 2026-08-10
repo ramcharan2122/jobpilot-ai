@@ -148,32 +148,28 @@ export const ApplicationsPage: React.FC = () => {
                         style={{ padding: '6px 12px', fontSize: '12px' }}
                         onClick={() => {
                           setSelectedApp(app);
-                          setViewTab(app.status === 'ACTION_REQUIRED' ? 'embedded_portal' : 'details');
+                          setViewTab('details');
                         }}
                       >
                         Details
                       </button>
 
-                      {app.status === 'ACTION_REQUIRED' && (
-                        <button
-                          className="btn-primary"
-                          style={{ padding: '6px 12px', fontSize: '12px', background: 'var(--accent-amber)', color: '#0f172a', display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 700 }}
-                          onClick={() => {
-                            setSelectedApp(app);
-                            setViewTab('embedded_portal');
-                          }}
-                        >
-                          <Monitor size={12} /> Embedded View
-                        </button>
-                      )}
-                      
-                      {app.status === 'SUBMITTED' && (
+                      <button
+                        className="btn-primary"
+                        style={{ padding: '6px 12px', fontSize: '12px', background: 'rgba(56, 189, 248, 0.2)', color: 'var(--accent-cyan)', border: '1px solid rgba(56, 189, 248, 0.4)', display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}
+                        onClick={() => {
+                          setSelectedApp(app);
+                          setViewTab('embedded_portal');
+                        }}
+                      >
+                        <Monitor size={12} /> Open Embedded Portal
+                      </button>
+
+                      {app.status === 'SUBMITTED' ? (
                         <span style={{ color: 'var(--accent-emerald)', fontWeight: 700, fontSize: '12.5px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                           <CheckCircle size={14} /> Submitted
                         </span>
-                      )}
-
-                      {app.status !== 'SUBMITTED' && app.status !== 'ACTION_REQUIRED' && (
+                      ) : (
                         <button
                           className="btn-primary"
                           style={{ padding: '6px 12px', fontSize: '12px' }}
