@@ -62,8 +62,11 @@ class AuthService:
     async def authenticate_user(db: AsyncSession, user_in: UserLogin) -> dict:
         result = await db.execute(select(User).filter(User.email == user_in.email))
         user = result.scalars().first()
-        if not user or not verify_password(user_in.password, user.hashed_password):
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password.")
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Account not found. Please click Register below to create an account first.")
+            
+        if not verify_password(user_in.password, user.hashed_password):
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect password. Please check your password and try again.")
             
         token = create_access_token(user.id)
         return {

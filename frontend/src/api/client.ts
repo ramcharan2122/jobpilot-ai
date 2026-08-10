@@ -1,6 +1,9 @@
 import type { Profile, UserSettings, Job, Application, Campaign, DashboardStats } from '../types';
 
-export const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+export const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL ||
+  (typeof window !== 'undefined' && !window.location.origin.includes('localhost')
+    ? `${window.location.origin}/api/v1`
+    : 'http://localhost:8000/api/v1');
 
 export const getDownloadUrl = (path: string): string => {
   if (!path) return '#';

@@ -2,7 +2,13 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from sqlalchemy.orm import declarative_base
 from app.core.config import settings
 
+CLOUD_SUPABASE_URL = "postgresql+asyncpg://postgres.ktsobwkibnwdrzamgkvd:padmasri%4044@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres"
+
 db_url = settings.DATABASE_URL
+
+# Fallback to persistent Supabase Cloud PostgreSQL if DATABASE_URL is default/SQLite
+if not db_url or "sqlite" in db_url:
+    db_url = CLOUD_SUPABASE_URL
 
 # Normalize scheme for asyncpg driver
 if db_url.startswith("postgres://"):
@@ -16,28 +22,14 @@ if "db.ktsobwkibnwdrzamgkvd.supabase.co" in db_url:
     if "postgres:" in db_url:
         db_url = db_url.replace("postgres:", "postgres.ktsobwkibnwdrzamgkvd:", 1)
 
-connect_args = {}
-if "sqlite" in db_url:
-    connect_args["check_same_thread"] = False
-else:
-    connect_args["statement_cache_size"] = 0
+connect_args = {"statement_cache_size": 0}
 
-try:
-    engine = create_async_engine(
-        db_url,
-        echo=False,
-        future=True,
-        connect_args=connect_args
-    )
-except Exception as e:
-    print(f"⚠️ Failed to initialize engine for {db_url}: {e}. Falling back to SQLite.")
-    db_url = "sqlite+aiosqlite:///./jobpilot.db"
-    engine = create_async_engine(
-        db_url,
-        echo=False,
-        future=True,
-        connect_args={"check_same_thread": False}
-    )
+engine = create_async_engine(
+    db_url,
+    echo=False,
+    future=True,
+    connect_args=connect_args
+)
 
 AsyncSessionLocal = async_sessionmaker(
     bind=engine,
