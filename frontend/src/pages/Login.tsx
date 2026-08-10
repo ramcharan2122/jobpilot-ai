@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Briefcase, ArrowRight, Lock, Mail, User as UserIcon, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { Briefcase, ArrowRight, Lock, Mail, User as UserIcon, ShieldCheck, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 
@@ -21,6 +21,7 @@ export const AuthPage: React.FC<AuthProps> = ({ onNavigate, isRegister = false }
   // Password auth states - clean empty inputs
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [fullName, setFullName] = useState('');
 
   // OTP auth states - clean empty inputs
@@ -274,14 +275,34 @@ export const AuthPage: React.FC<AuthProps> = ({ onNavigate, isRegister = false }
               <div style={{ position: 'relative' }}>
                 <Lock size={18} style={{ position: 'absolute', left: '14px', top: '14px', color: 'var(--text-muted)' }} />
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   className="form-control"
-                  style={{ paddingLeft: '42px' }}
+                  style={{ paddingLeft: '42px', paddingRight: '44px' }}
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '12px',
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--text-muted)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '4px'
+                  }}
+                  title={showPassword ? "Hide Password" : "Show Password"}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
               </div>
             </div>
 
