@@ -127,14 +127,26 @@ class ApplicationService:
             db.add(ApplicationEvent(application_id=app.id, event_type="LOG", message="Launching browser automation engine..."))
             await db.commit()
 
-            adapter = LocalMockApplicationAdapter()
-            auto_res = await adapter.apply_to_job(
-                application_id=app.id,
-                application_url=app.job.application_url if app.job else "",
-                user_profile=profile_dict,
-                resume_path=gen_resume.pdf_path,
-                answers=answers
-            )
+            app_url = app.job.application_url if app.job else ""
+            if app_url and "mock-portal" not in app_url:
+                from app.applications.adapters.real_ats_adapters import ProductionApplicationAdapter
+                prod_adapter = ProductionApplicationAdapter()
+                auto_res = await prod_adapter.apply_to_real_job(
+                    application_id=app.id,
+                    application_url=app_url,
+                    user_profile=profile_dict,
+                    resume_path=gen_resume.pdf_path,
+                    answers=answers
+                )
+            else:
+                adapter = LocalMockApplicationAdapter()
+                auto_res = await adapter.apply_to_job(
+                    application_id=app.id,
+                    application_url=app_url,
+                    user_profile=profile_dict,
+                    resume_path=gen_resume.pdf_path,
+                    answers=answers
+                )
 
             app.status = auto_res.get("status", "SUBMITTED")
             app.error_type = auto_res.get("error_type")
