@@ -250,5 +250,29 @@ export const api = {
     });
     if (!res.ok) throw new Error('Failed to fetch campaigns');
     return res.json();
+  },
+
+  async getConnectedPlatforms(): Promise<any[]> {
+    const res = await fetch(`${API_BASE}/integrations/platforms`, {
+      headers: authHeaders()
+    });
+    return handleResponse(res, 'Failed to fetch connected platforms');
+  },
+
+  async connectPlatform(data: { platform_name: string; username_or_email: string; auth_credentials?: string }) {
+    const res = await fetch(`${API_BASE}/integrations/platforms/connect`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify(data)
+    });
+    return handleResponse(res, 'Failed to connect platform');
+  },
+
+  async disconnectPlatform(platformName: string) {
+    const res = await fetch(`${API_BASE}/integrations/platforms/disconnect?platform_name=${encodeURIComponent(platformName)}`, {
+      method: 'POST',
+      headers: authHeaders()
+    });
+    return handleResponse(res, 'Failed to disconnect platform');
   }
 };

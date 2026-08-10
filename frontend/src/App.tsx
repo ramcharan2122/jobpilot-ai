@@ -11,6 +11,7 @@ import { ApplicationsPage } from './pages/Applications';
 import { ResumesPage } from './pages/Resumes';
 import { CampaignsPage } from './pages/Campaigns';
 import { MockPortalSimPage } from './pages/MockPortal';
+import { ConnectedPlatformsPage } from './pages/ConnectedPlatforms';
 
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
@@ -43,6 +44,8 @@ const AppContent: React.FC = () => {
         return <ProfilePage />;
       case '/preferences':
         return <PreferencesPage />;
+      case '/platforms':
+        return <ConnectedPlatformsPage />;
       case '/jobs':
         return <JobsPage />;
       case '/applications':

@@ -115,3 +115,14 @@ class MasterResume(Base):
     uploaded_at = Column(DateTime, default=datetime.utcnow)
 
     profile = relationship("Profile", back_populates="master_resumes")
+
+class ConnectedPlatform(Base):
+    __tablename__ = "connected_platforms"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    platform_name = Column(String, nullable=False)  # LINKEDIN, NAUKRI, INDEED, INSTAHYRE, WELLFOUND, FOUNDIT, UNSTOP, GLASSDOOR
+    username_or_email = Column(String, nullable=True)
+    auth_credentials = Column(String, nullable=True)
+    is_connected = Column(Boolean, default=True)
+    last_synced_at = Column(DateTime, default=datetime.utcnow)

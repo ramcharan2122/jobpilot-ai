@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, User, Sliders, Briefcase, FileCheck, Layers, FileText, Globe, LogOut } from 'lucide-react';
+import { LayoutDashboard, User, Sliders, Briefcase, FileCheck, Layers, FileText, Globe, LogOut, Link2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 interface SidebarProps {
@@ -14,6 +14,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate }) => 
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { label: 'Profile & Resume', path: '/profile', icon: User },
     { label: 'LPA & Preferences', path: '/preferences', icon: Sliders },
+    { label: 'Connected Platforms', path: '/platforms', icon: Link2 },
     { label: 'Jobs Discovery', path: '/jobs', icon: Briefcase },
     { label: 'Applications', path: '/applications', icon: FileCheck },
     { label: 'Resume Library', path: '/resumes', icon: FileText },

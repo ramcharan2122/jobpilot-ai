@@ -7,6 +7,7 @@ from app.api.v1.resumes import router as resumes_router
 from app.api.v1.applications import router as applications_router
 from app.api.v1.campaigns import router as campaigns_router
 from app.api.v1.mock_portal import router as mock_portal_router
+from app.api.v1.integrations import router as integrations_router
 
 api_router = APIRouter()
 api_router.include_router(auth_router)
@@ -17,3 +18,4 @@ api_router.include_router(resumes_router)
 api_router.include_router(applications_router)
 api_router.include_router(campaigns_router)
 api_router.include_router(mock_portal_router)
+api_router.include_router(integrations_router)
