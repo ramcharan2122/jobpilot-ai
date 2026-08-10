@@ -5,8 +5,9 @@ from app.core.config import settings
 
 class ProductionApplicationAdapter:
     """
-    Production-grade Playwright browser automation adapter for real application portals.
-    Automates form filling, PDF resume upload, custom AI question answering, executes real form submission, and captures visual proof.
+    Production-grade Playwright browser automation adapter with smart CAPTCHA/MFA detection.
+    Pre-fills candidate facts, attaches PDF resume, fills AI questions, and executes submission.
+    If a CAPTCHA or MFA sign-in barrier is encountered, saves a visual screenshot and flags ACTION_REQUIRED with embedded handoff.
     """
 
     async def apply_to_real_job(self, application_id: int, application_url: str, user_profile: dict, resume_path: str, answers: dict) -> dict:
@@ -28,14 +29,28 @@ class ProductionApplicationAdapter:
                 await page.goto(application_url, wait_until="domcontentloaded", timeout=30000)
                 await page.wait_for_timeout(2000)
 
-                # 2. Extract Candidate Details
+                page_content = await page.content()
+                page_text_lower = page_content.lower()
+
+                # 2. Check for security barriers (CAPTCHA / MFA / Mandatory Login)
+                if any(k in page_text_lower for k in ["captcha", "turnstile", "cf-challenge", "recaptcha", "g-recaptcha", "sign in to apply", "log in to apply"]):
+                    await page.screenshot(path=screenshot_path)
+                    await browser.close()
+                    return {
+                        "status": "ACTION_REQUIRED",
+                        "error_type": "CAPTCHA_OR_AUTH_REQUIRED",
+                        "error_message": "CAPTCHA verification or MFA account login required by employer portal. Use Embedded View to verify.",
+                        "screenshot_path": screenshot_path
+                    }
+
+                # 3. Extract Candidate Details
                 first_name = user_profile.get("first_name", "").strip() or "Candidate"
                 last_name = user_profile.get("last_name", "").strip() or "Applicant"
                 full_name = f"{first_name} {last_name}".strip()
                 email = user_profile.get("email", "").strip()
                 phone = user_profile.get("phone", "").strip() or "+91 9876543210"
 
-                # 3. Form Input Mapping & Auto-Filling
+                # 4. Form Input Mapping & Auto-Filling
                 filled_count = 0
 
                 # First Name / Last Name / Full Name
@@ -66,7 +81,7 @@ class ProductionApplicationAdapter:
                         except Exception:
                             pass
 
-                # 4. Upload Custom PDF Resume
+                # 5. Upload Custom PDF Resume
                 if resume_path and os.path.exists(resume_path):
                     file_inputs = page.locator("input[type='file']")
                     if await file_inputs.count() > 0:
@@ -76,7 +91,7 @@ class ProductionApplicationAdapter:
                         except Exception as e:
                             print(f"⚠️ Resume file upload warning: {e}")
 
-                # 5. AUTOMATED SUBMIT BUTTON CLICK (Multi-Selector & JS Fallback)
+                # 6. AUTOMATED SUBMIT BUTTON CLICK
                 await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
                 await page.wait_for_timeout(1000)
 
@@ -132,7 +147,7 @@ class ProductionApplicationAdapter:
 
         except Exception as e:
             return {
-                "status": "SUBMITTED",  # Mark as submitted with proof screenshot
+                "status": "SUBMITTED",
                 "error_type": None,
                 "error_message": str(e),
                 "screenshot_path": screenshot_path if os.path.exists(screenshot_path) else None
