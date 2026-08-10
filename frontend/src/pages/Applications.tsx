@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, RefreshCw, Loader2 } from 'lucide-react';
+import { FileText, RefreshCw, Loader2, ExternalLink } from 'lucide-react';
 import { api, getDownloadUrl } from '../api/client';
 import type { Application } from '../types';
 
@@ -13,7 +13,7 @@ export const ApplicationsPage: React.FC = () => {
     fetchApplications();
   }, []);
 
-  // Polling mechanism to auto-refresh applications while resumes are generating
+  // Polling mechanism to auto-refresh applications while resumes are generating or applying
   useEffect(() => {
     const hasPending = applications.some(
       (app) => app.status === 'GENERATING_RESUME' || app.status === 'APPLYING' || app.status === 'READY' || !app.pdf_url
@@ -43,7 +43,7 @@ export const ApplicationsPage: React.FC = () => {
     setSubmittingId(appId);
     try {
       await api.submitApplication(appId);
-      await fetchApplications();
+      await fetchApplications(true);
     } catch (err: any) {
       alert(err.message || 'Submission failed');
     } finally {
@@ -55,6 +55,12 @@ export const ApplicationsPage: React.FC = () => {
     switch (status) {
       case 'SUBMITTED':
         return <span className="badge-status badge-submitted">SUBMITTED</span>;
+      case 'APPLYING':
+        return (
+          <span className="badge-status" style={{ background: 'rgba(56, 189, 248, 0.2)', color: 'var(--accent-cyan)', border: '1px solid rgba(56, 189, 248, 0.4)', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <Loader2 size={12} className="spin" /> APPLYING VIA AI...
+          </span>
+        );
       case 'RESUME_READY':
         return <span className="badge-status" style={{ background: 'rgba(16, 185, 129, 0.2)', color: 'var(--accent-emerald)', border: '1px solid rgba(16, 185, 129, 0.4)' }}>RESUME READY</span>;
       case 'GENERATING_RESUME':
@@ -101,7 +107,7 @@ export const ApplicationsPage: React.FC = () => {
             {applications.length === 0 ? (
               <tr>
                 <td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
-                  No job applications created yet. Go to <strong>Jobs Discovery</strong> and click <strong>1-Click Apply</strong>!
+                  No job applications created yet. Go to <strong>Jobs Discovery</strong> and click <strong>Apply AI</strong>!
                 </td>
               </tr>
             ) : (
@@ -139,14 +145,27 @@ export const ApplicationsPage: React.FC = () => {
                       <button className="btn-secondary" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => setSelectedApp(app)}>
                         Details
                       </button>
-                      {app.status !== 'SUBMITTED' && (
+                      
+                      {app.status === 'ACTION_REQUIRED' && app.job?.application_url && (
+                        <a
+                          href={app.job.application_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="btn-primary"
+                          style={{ padding: '6px 12px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'var(--accent-amber)', color: '#0f172a' }}
+                        >
+                          Complete Step <ExternalLink size={12} />
+                        </a>
+                      )}
+
+                      {app.status !== 'SUBMITTED' && app.status !== 'ACTION_REQUIRED' && (
                         <button
                           className="btn-primary"
                           style={{ padding: '6px 12px', fontSize: '12px' }}
                           onClick={() => handleManualSubmit(app.id)}
-                          disabled={submittingId === app.id}
+                          disabled={submittingId === app.id || app.status === 'APPLYING'}
                         >
-                          {submittingId === app.id ? 'Submitting...' : 'Submit Now'}
+                          {submittingId === app.id || app.status === 'APPLYING' ? 'Submitting...' : 'Submit Application'}
                         </button>
                       )}
                     </div>

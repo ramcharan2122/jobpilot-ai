@@ -1,9 +1,9 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
-from app.database.session import get_db
+from app.database.session import get_db, AsyncSessionLocal
 from app.schemas.schemas import ApplicationCreate, ApplicationOut, DashboardStats
 from app.services.application_service import ApplicationService
 from app.models.application import Application
@@ -14,22 +14,38 @@ from app.api.v1.deps import get_current_user
 
 router = APIRouter(prefix="/applications", tags=["Applications"])
 
+async def run_bg_application_process(app_id: int):
+    """Background task worker to run resume generation and Playwright submission without blocking HTTP responses."""
+    try:
+        async with AsyncSessionLocal() as db:
+            await ApplicationService.process_application(db, app_id)
+    except Exception as e:
+        print(f"⚠️ Background application processing error for App ID {app_id}: {e}")
+
 @router.post("", response_model=dict)
-async def create_application(app_in: ApplicationCreate, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def create_application(app_in: ApplicationCreate, background_tasks: BackgroundTasks, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     app = await ApplicationService.create_application(db, current_user.id, app_in.job_id, mode=app_in.application_mode)
+    
+    # Process resume generation & submission asynchronously in background task (Instant response!)
+    background_tasks.add_task(run_bg_application_process, app.id)
+    
     return {"message": "Application created successfully", "id": app.id, "status": app.status}
 
 @router.post("/{app_id}/submit")
-async def submit_application(app_id: int, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def submit_application(app_id: int, background_tasks: BackgroundTasks, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     res = await db.execute(select(Application).filter(Application.id == app_id, Application.user_id == current_user.id))
     app = res.scalars().first()
     if not app:
         raise HTTPException(status_code=404, detail="Application not found.")
         
     app.application_mode = "AUTO"
+    app.status = "APPLYING"
     await db.commit()
-    processed = await ApplicationService.process_application(db, app.id)
-    return {"message": "Application processed", "status": processed.status}
+    
+    # Process Playwright browser submission asynchronously in background task (Instant response!)
+    background_tasks.add_task(run_bg_application_process, app.id)
+    
+    return {"message": "Application submission launched", "id": app.id, "status": "APPLYING"}
 
 @router.get("", response_model=List[dict])
 async def list_applications(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
@@ -37,15 +53,11 @@ async def list_applications(current_user: User = Depends(get_current_user), db: 
         select(Application)
         .options(selectinload(Application.job))
         .filter(Application.user_id == current_user.id)
+        .order_by(Application.created_at.desc())
     )
     apps = res.scalars().all()
     out = []
     for a in apps:
-        if not a.resume_id or a.status in ["GENERATING_RESUME", "ACTION_REQUIRED"]:
-            try:
-                a = await ApplicationService.process_application(db, a.id)
-            except Exception:
-                pass
         out.append({
             "id": a.id,
             "job_id": a.job_id,
