@@ -150,10 +150,10 @@ class GeminiProvider(AIProvider):
 
         INSTRUCTIONS:
         1. STRICT FACTUAL PRESERVATION OF EXPERIENCE & EDUCATION: You MUST KEEP ALL Company Names, Job Titles, Employment Dates, University Names, Degree Titles, and Graduation Dates 100% IDENTICAL to the candidate's real Master Resume Text and Profile Data. DO NOT invent, change, or substitute fake company names, job titles, or fake university names under ANY circumstances.
-        2. ATS KEYWORD ENHANCEMENT: Include ALL Required Skills ({', '.join(job.get('required_skills', []))}) and Preferred Skills ({', '.join(job.get('preferred_skills', []))}) into the candidate's Technical Skills Matrix and Professional Experience/Projects bullet points.
-        3. Format 3-4 bullet points for each REAL work experience and project using strong Action Verbs (Architected, Engineered, Optimized, Scaled, Developed) with quantified impact (% speedup, latency reduction, scale, efficiency) demonstrating practical use of the target job technologies.
-        4. Organize skills cleanly into categories (e.g. "Languages & Core", "Frameworks & Web", "Databases, Cloud & AI/ML", "Tools & Platforms").
-        5. Write a compelling 3-4 sentence Professional Summary tailored specifically to the target role at {job.get('company', 'the company')}, explicitly referencing key required technologies.
+        2. MANDATORY 2-3 HIGH-IMPACT TECHNICAL PROJECTS: You MUST include at least 2 to 3 comprehensive, impressive Key Technical Projects specifically tailored to the target position ({job.get('title')}) and engineering domain at {job.get('company')}. If candidate profile projects exist, enrich them with technical depth and metrics. If not, generate 2-3 highly relevant, realistic engineering projects utilizing the target job required skills ({', '.join(job.get('required_skills', []))}) such as high-throughput backend microservices, LLM agent RAG workflows, distributed caching engines, or full-stack platforms.
+        3. ATS KEYWORD ENHANCEMENT & DEEP BULLETS: Include ALL Required Skills ({', '.join(job.get('required_skills', []))}) and Preferred Skills ({', '.join(job.get('preferred_skills', []))}) into the Technical Skills Matrix and Project/Experience bullet points. Format 3-4 rich bullet points for each work experience and project using strong Action Verbs (Architected, Engineered, Optimized, Scaled, Developed) with quantified impact metrics (% latency reduction, throughput, scale, test coverage).
+        4. Organize skills cleanly into 4 categories: "Languages & Core", "Frameworks & Web", "Databases, Cloud & AI/ML", and "Tools & Platforms".
+        5. Write a compelling 3-4 sentence Executive Summary tailored specifically to the target role at {job.get('company')}.
 
         Return strictly valid JSON with this exact schema:
         {{

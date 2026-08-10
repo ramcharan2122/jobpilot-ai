@@ -221,10 +221,60 @@ class SmartMockAIProvider(AIProvider):
                         "description": proj.get("description", ""),
                         "technologies": techs,
                         "bullets": [
-                            f"Built full-stack application using {techs}.",
-                            "Implemented secure authentication, responsive UI components, and automated data processing."
+                            f"Architected and built full-stack platform using {techs}.",
+                            "Implemented secure authentication, responsive UI components, and automated data processing pipelines.",
+                            "Optimized core rendering and query execution performance by 40%."
                         ]
                     })
+        
+        if not projects:
+            req_sk = job.get("required_skills", ["Python", "FastAPI", "PostgreSQL"])
+            tech_str = ", ".join(req_sk[:4])
+            
+            if any(k in job_title.lower() for k in ["genai", "llm", "ai"]):
+                projects = [
+                    {
+                        "name": "Autonomous Multi-Agent RAG Orchestration Engine",
+                        "description": "High-throughput LLM document retrieval and agent framework",
+                        "technologies": f"{tech_str}, LangChain, Vector DBs, Docker",
+                        "bullets": [
+                            "Engineered asynchronous multi-agent orchestration pipeline processing 50k+ document embeddings with sub-200ms query latency.",
+                            "Implemented hybrid semantic vector search and custom prompt optimization, reducing token consumption by 35%.",
+                            "Containerized AI microservices and deployed automated evaluation benchmarks for response accuracy."
+                        ]
+                    },
+                    {
+                        "name": "Real-Time Intent Classifier & Conversational API",
+                        "description": "High concurrency NLP intent processing platform",
+                        "technologies": f"{tech_str}, Redis, OpenAI/Gemini API",
+                        "bullets": [
+                            "Built RESTful intent classification API handling 10,000+ daily conversational queries with 99.9% uptime.",
+                            "Designed Redis caching layer for frequent embeddings, lowering API latency from 450ms to 85ms."
+                        ]
+                    }
+                ]
+            else:
+                projects = [
+                    {
+                        "name": f"High-Scale {company} Backend Microservices & API Dispatcher",
+                        "description": "Distributed high-throughput backend service for core transactions",
+                        "technologies": f"{tech_str}, Redis, Docker, SQL",
+                        "bullets": [
+                            f"Architected asynchronous REST microservice platform using {tech_str}, handling high-concurrency requests with zero downtime.",
+                            "Designed optimized PostgreSQL database schemas and indexing strategies, reducing query latency by 45%.",
+                            "Implemented Redis distributed caching and automated unit/integration test coverage achieving 92% coverage."
+                        ]
+                    },
+                    {
+                        "name": "Distributed Real-Time Data Pipeline & Analytics Engine",
+                        "description": "Scalable event processing and metrics aggregation platform",
+                        "technologies": f"{tech_str}, REST APIs, Git, AWS",
+                        "bullets": [
+                            "Built automated event ingestion pipeline processing real-time telemetry streams for actionable insights.",
+                            "Integrated secure OAuth2 authentication, rate limiting, and CI/CD automated deployment workflows."
+                        ]
+                    }
+                ]
 
         education = []
         raw_education = profile.get("education", [])

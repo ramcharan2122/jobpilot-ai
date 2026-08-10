@@ -134,12 +134,13 @@ class ResumeService:
         # Anti-Hallucination Validation
         is_valid, validation_notes = ResumeValidator.validate_resume_against_profile(resume_content, profile_dict)
 
-        # File paths
-        date_str = datetime.now().strftime("%Y-%m-%d")
-        safe_company = "".join([c for c in job.company if c.isalnum()])
-        safe_title = "".join([c for c in job.title if c.isalnum()])
-        base_filename = f"{safe_title}_{safe_company}_{user_id}_{date_str}"
-        
+        # Clean candidate full name for filename (e.g. "Shashi Kiran" -> "shashikiran")
+        raw_name = f"{profile.first_name or ''} {profile.last_name or ''}".strip()
+        clean_user = "".join([c for c in raw_name.lower() if c.isalnum()])
+        if not clean_user:
+            clean_user = "shashikiran"
+            
+        base_filename = f"{clean_user}.resume"
         pdf_path = os.path.join(settings.STORAGE_DIR, "resumes", f"{base_filename}.pdf")
         docx_path = os.path.join(settings.STORAGE_DIR, "resumes", f"{base_filename}.docx")
 
