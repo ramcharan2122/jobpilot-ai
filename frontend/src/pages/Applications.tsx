@@ -191,7 +191,7 @@ export const ApplicationsPage: React.FC = () => {
       {/* Application Detail & Embedded View Modal */}
       {selectedApp && (
         <div className="modal-overlay" onClick={() => setSelectedApp(null)}>
-          <div className="glass-panel modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '800px', width: '95%' }}>
+          <div className="glass-panel modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '850px', width: '95%' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <h2 style={{ fontSize: '18px', fontWeight: 800 }}>
                 {selectedApp.job?.company} — {selectedApp.job?.title}
@@ -199,43 +199,43 @@ export const ApplicationsPage: React.FC = () => {
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button
                   className={viewTab === 'details' ? 'btn-primary' : 'btn-secondary'}
-                  style={{ padding: '4px 12px', fontSize: '12px' }}
+                  style={{ padding: '6px 14px', fontSize: '12px' }}
                   onClick={() => setViewTab('details')}
                 >
                   AI Field Answers
                 </button>
                 <button
                   className={viewTab === 'embedded_portal' ? 'btn-primary' : 'btn-secondary'}
-                  style={{ padding: '4px 12px', fontSize: '12px' }}
+                  style={{ padding: '6px 14px', fontSize: '12px', background: viewTab === 'embedded_portal' ? 'var(--accent-cyan)' : 'transparent', color: viewTab === 'embedded_portal' ? '#0f172a' : 'var(--text-primary)' }}
                   onClick={() => setViewTab('embedded_portal')}
                 >
-                  Embedded Portal View
+                  <Monitor size={12} /> Embedded Portal View
                 </button>
               </div>
             </div>
 
             {viewTab === 'embedded_portal' ? (
               <div>
-                <div style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', padding: '12px 16px', borderRadius: 'var(--radius-md)', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ fontSize: '13px', color: 'var(--accent-amber)' }}>
-                    <strong>Verification Required:</strong> Complete CAPTCHA or sign-in on employer portal, then click <strong>"I Verified — Submit AI"</strong>.
+                <div style={{ background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.4)', padding: '14px 18px', borderRadius: 'var(--radius-md)', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ fontSize: '13px', color: 'var(--accent-amber)', lineHeight: '1.4' }}>
+                    <strong>Employer Verification Portal:</strong> Complete verification or sign-in on employer page, then click <strong>"I Verified — Re-Submit Application via AI"</strong>.
                   </div>
                   {selectedApp.job?.application_url && (
                     <a
                       href={selectedApp.job.application_url}
                       target="_blank"
                       rel="noreferrer"
-                      className="btn-secondary"
-                      style={{ fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'rgba(245, 158, 11, 0.2)', color: 'var(--accent-amber)' }}
+                      className="btn-primary"
+                      style={{ fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'var(--accent-amber)', color: '#0f172a', fontWeight: 700, padding: '8px 14px', whiteSpace: 'nowrap' }}
                     >
-                      Open in New Tab <ExternalLink size={12} />
+                      Open in New Tab <ExternalLink size={14} />
                     </a>
                   )}
                 </div>
 
                 {/* Embedded Live IFrame Frame */}
                 {selectedApp.job?.application_url ? (
-                  <div style={{ border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: 'var(--radius-md)', overflow: 'hidden', height: '400px', background: '#ffffff' }}>
+                  <div style={{ border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: 'var(--radius-md)', overflow: 'hidden', height: '420px', background: '#ffffff', position: 'relative' }}>
                     <iframe
                       src={selectedApp.job.application_url}
                       title="Embedded Job Portal"
@@ -246,11 +246,11 @@ export const ApplicationsPage: React.FC = () => {
                   <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Application URL not available for embedded preview.</p>
                 )}
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '16px', alignItems: 'center' }}>
                   <button className="btn-secondary" onClick={() => setSelectedApp(null)}>Close</button>
                   <button
                     className="btn-primary"
-                    style={{ background: 'var(--accent-emerald)', color: '#0f172a' }}
+                    style={{ background: 'var(--accent-emerald)', color: '#0f172a', fontWeight: 700, padding: '10px 20px' }}
                     onClick={() => {
                       handleManualSubmit(selectedApp.id);
                       setSelectedApp(null);
