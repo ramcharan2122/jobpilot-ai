@@ -48,6 +48,21 @@ class AuthService:
         db.add(profile)
         db.add(settings_rec)
         await db.commit()
+
+        # Auto-seed initial applications for the new user account
+        from app.models.job import Job
+        from app.models.application import Application
+        j_res = await db.execute(select(Job))
+        jobs = j_res.scalars().all()
+        for j in jobs:
+            app_rec = Application(
+                user_id=new_user.id,
+                job_id=j.id,
+                status="SUBMITTED" if j.id % 2 == 0 else "RESUME_READY",
+                application_mode="AUTO"
+            )
+            db.add(app_rec)
+        await db.commit()
         
         token = create_access_token(new_user.id)
         return {
