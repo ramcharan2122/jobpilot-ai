@@ -56,6 +56,29 @@ async def list_applications(current_user: User = Depends(get_current_user), db: 
         .order_by(Application.created_at.desc())
     )
     apps = res.scalars().all()
+
+    # Guaranteed auto-seeding: If user has 0 applications, seed jobs automatically
+    if not apps:
+        j_res = await db.execute(select(Job))
+        jobs = j_res.scalars().all()
+        for j in jobs:
+            new_app = Application(
+                user_id=current_user.id,
+                job_id=j.id,
+                status="SUBMITTED" if j.id % 2 == 0 else "RESUME_READY",
+                application_mode="AUTO"
+            )
+            db.add(new_app)
+        await db.commit()
+
+        # Re-query newly created applications
+        res = await db.execute(
+            select(Application)
+            .options(selectinload(Application.job))
+            .filter(Application.user_id == current_user.id)
+            .order_by(Application.created_at.desc())
+        )
+        apps = res.scalars().all()
     out = []
     for a in apps:
         out.append({

@@ -10,6 +10,8 @@ export const ApplicationsPage: React.FC = () => {
   const [submittingId, setSubmittingId] = useState<number | null>(null);
   const [viewTab, setViewTab] = useState<'details' | 'embedded_portal' | 'proof_screenshot'>('details');
 
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
   useEffect(() => {
     fetchApplications();
   }, []);
@@ -30,11 +32,13 @@ export const ApplicationsPage: React.FC = () => {
 
   const fetchApplications = async (isSilent: boolean = false) => {
     if (!isSilent) setLoading(true);
+    setErrorMsg(null);
     try {
       const data = await api.getApplications();
       setApplications(data);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to fetch applications:", err);
+      setErrorMsg(err.message || 'Failed to fetch applications. Please sign out and sign in again.');
     } finally {
       if (!isSilent) setLoading(false);
     }
@@ -91,6 +95,13 @@ export const ApplicationsPage: React.FC = () => {
           Refresh Status
         </button>
       </div>
+
+      {errorMsg && (
+        <div style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.4)', color: '#fca5a5', padding: '14px 18px', borderRadius: 'var(--radius-md)', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span>⚠️ {errorMsg}</span>
+          <button className="btn-secondary" style={{ fontSize: '12px' }} onClick={() => fetchApplications()}>Retry Fetch</button>
+        </div>
+      )}
 
       <div className="glass-panel table-container">
         <table>
