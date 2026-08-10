@@ -48,14 +48,30 @@ export const JobsPage: React.FC = () => {
 
   const getPlatformBadge = (source: string) => {
     switch (source) {
+      case 'LINKEDIN':
+        return <span className="badge-status badge-ready" style={{ background: 'rgba(10, 102, 194, 0.2)', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.3)' }}>LinkedIn Verified</span>;
+      case 'NAUKRI':
+        return <span className="badge-status badge-ready" style={{ background: 'rgba(0, 64, 128, 0.25)', color: '#60a5fa', border: '1px solid rgba(96, 165, 250, 0.3)' }}>Naukri Verified</span>;
+      case 'INDEED':
+        return <span className="badge-status badge-ready" style={{ background: 'rgba(0, 58, 155, 0.25)', color: '#818cf8', border: '1px solid rgba(129, 140, 248, 0.3)' }}>Indeed Verified</span>;
+      case 'INSTAHYRE':
+        return <span className="badge-status badge-ready" style={{ background: 'rgba(107, 33, 168, 0.25)', color: '#c084fc', border: '1px solid rgba(192, 132, 252, 0.3)' }}>Instahyre Verified</span>;
+      case 'WELLFOUND':
+        return <span className="badge-status badge-ready" style={{ background: 'rgba(249, 115, 22, 0.2)', color: '#fb923c', border: '1px solid rgba(251, 146, 60, 0.3)' }}>Wellfound (AngelList)</span>;
+      case 'FOUNDIT':
+        return <span className="badge-status badge-ready" style={{ background: 'rgba(5, 150, 105, 0.2)', color: '#34d399', border: '1px solid rgba(52, 211, 153, 0.3)' }}>Foundit (Monster)</span>;
+      case 'UNSTOP':
+        return <span className="badge-status badge-ready" style={{ background: 'rgba(2, 132, 199, 0.2)', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.3)' }}>Unstop Verified</span>;
+      case 'GLASSDOOR':
+        return <span className="badge-status badge-ready" style={{ background: 'rgba(22, 163, 74, 0.2)', color: '#4ade80', border: '1px solid rgba(74, 222, 128, 0.3)' }}>Glassdoor Verified</span>;
       case 'GREENHOUSE':
-        return <span className="badge-status badge-ready" style={{ background: 'rgba(16, 185, 129, 0.15)', color: 'var(--accent-emerald)' }}>Greenhouse Verified</span>;
+        return <span className="badge-status badge-ready" style={{ background: 'rgba(16, 185, 129, 0.15)', color: 'var(--accent-emerald)' }}>Greenhouse ATS</span>;
       case 'LEVER':
-        return <span className="badge-status badge-ready" style={{ background: 'rgba(56, 189, 248, 0.15)', color: 'var(--accent-cyan)' }}>Lever Verified</span>;
+        return <span className="badge-status badge-ready" style={{ background: 'rgba(56, 189, 248, 0.15)', color: 'var(--accent-cyan)' }}>Lever ATS</span>;
       case 'SMARTRECRUITERS':
-        return <span className="badge-status badge-ready" style={{ background: 'rgba(99, 102, 241, 0.15)', color: 'var(--accent-indigo)' }}>SmartRecruiters Verified</span>;
+        return <span className="badge-status badge-ready" style={{ background: 'rgba(99, 102, 241, 0.15)', color: 'var(--accent-indigo)' }}>SmartRecruiters ATS</span>;
       case 'ASHBY':
-        return <span className="badge-status badge-ready" style={{ background: 'rgba(245, 158, 11, 0.15)', color: 'var(--accent-amber)' }}>Ashby Verified</span>;
+        return <span className="badge-status badge-ready" style={{ background: 'rgba(245, 158, 11, 0.15)', color: 'var(--accent-amber)' }}>Ashby ATS</span>;
       default:
         return <span className="badge-status badge-ready">Company Careers Verified</span>;
     }
@@ -66,7 +82,7 @@ export const JobsPage: React.FC = () => {
       <div className="top-header">
         <div className="page-title">
           <h1>Discovered Jobs Catalog Across Verified Platforms</h1>
-          <p>Verified Job Ingestion from Greenhouse, Lever, SmartRecruiters, Ashby, & Company Portals</p>
+          <p>Multi-Platform Job Aggregator: LinkedIn, Naukri, Indeed, Instahyre, Wellfound, Foundit, Unstop, Glassdoor & ATS Portals</p>
         </div>
       </div>
 
@@ -76,19 +92,27 @@ export const JobsPage: React.FC = () => {
           <input
             className="form-control"
             style={{ paddingLeft: '44px' }}
-            placeholder="Search by title (e.g. Python Developer, GenAI Engineer, Backend...)"
+            placeholder="Search by title or company (e.g. Google, Python Developer, GenAI, SDE...)"
             value={searchRole}
             onChange={(e) => setSearchRole(e.target.value)}
           />
         </div>
 
-        <select className="form-control" style={{ flex: 1 }} value={selectedSource} onChange={(e) => setSelectedSource(e.target.value)}>
-          <option value="ALL">All Verified Platforms</option>
-          <option value="GREENHOUSE">Greenhouse ATS</option>
-          <option value="LEVER">Lever ATS</option>
-          <option value="SMARTRECRUITERS">SmartRecruiters ATS</option>
-          <option value="ASHBY">Ashby ATS</option>
-          <option value="DEMO_SEED">Direct Careers Portals</option>
+        <select className="form-control" style={{ flex: 1.2 }} value={selectedSource} onChange={(e) => setSelectedSource(e.target.value)}>
+          <option value="ALL">🌐 All Verified Platforms</option>
+          <option value="LINKEDIN">🔵 LinkedIn Jobs</option>
+          <option value="NAUKRI">🔴 Naukri.com</option>
+          <option value="INSTAHYRE">🟣 Instahyre (Tech Hiring)</option>
+          <option value="WELLFOUND">🚀 Wellfound (AngelList)</option>
+          <option value="INDEED">🟡 Indeed Jobs</option>
+          <option value="FOUNDIT">🟢 Foundit (Monster)</option>
+          <option value="UNSTOP">🎯 Unstop (Challenges & Hiring)</option>
+          <option value="GLASSDOOR">📊 Glassdoor Jobs</option>
+          <option value="GREENHOUSE">🌿 Greenhouse ATS</option>
+          <option value="LEVER">⚡ Lever ATS</option>
+          <option value="SMARTRECRUITERS">💼 SmartRecruiters ATS</option>
+          <option value="ASHBY">🟧 Ashby ATS</option>
+          <option value="DEMO_SEED">🏢 Direct Company Portals</option>
         </select>
 
         <button type="submit" className="btn-primary">Search Jobs</button>

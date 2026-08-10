@@ -5,7 +5,20 @@ from app.models.job import Job
 from app.models.profile import Profile
 from app.models.settings import UserSettings
 from app.job_sources.seed_demo_source import SeedDemoJobSource
-from app.job_sources.real_sources import GreenhouseJobSource, LeverJobSource, SmartRecruitersJobSource, AshbyJobSource
+from app.job_sources.real_sources import (
+    GreenhouseJobSource,
+    LeverJobSource,
+    SmartRecruitersJobSource,
+    AshbyJobSource,
+    LinkedInJobSource,
+    NaukriJobSource,
+    IndeedJobSource,
+    InstahyreJobSource,
+    WellfoundJobSource,
+    FounditJobSource,
+    UnstopJobSource,
+    GlassdoorJobSource
+)
 from app.services.matching_service import MatchingService
 
 class JobService:
@@ -17,7 +30,15 @@ class JobService:
             GreenhouseJobSource(),
             LeverJobSource(),
             SmartRecruitersJobSource(),
-            AshbyJobSource()
+            AshbyJobSource(),
+            LinkedInJobSource(),
+            NaukriJobSource(),
+            IndeedJobSource(),
+            InstahyreJobSource(),
+            WellfoundJobSource(),
+            FounditJobSource(),
+            UnstopJobSource(),
+            GlassdoorJobSource()
         ]
         inserted_count = 0
         
@@ -41,7 +62,7 @@ class JobService:
     async def list_jobs(db: AsyncSession, user_id: int, role_filter: Optional[str] = None, min_lpa: Optional[float] = None) -> List[dict]:
         res = await db.execute(select(Job))
         jobs = res.scalars().all()
-        if not jobs or len(jobs) < 5:
+        if not jobs or len(jobs) < 15:
             await JobService.seed_demo_jobs(db)
             res = await db.execute(select(Job))
             jobs = res.scalars().all()
